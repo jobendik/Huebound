@@ -1,6 +1,6 @@
 import type { FXParticle, SparkFX } from '../types';
 import { G } from '../game/state';
-import { PALETTE } from './colors';
+import { PALETTE, rgba } from './colors';
 import { ctx } from './canvas';
 import { wrapEl } from './canvas';
 import { startLoop } from './loop';
@@ -10,19 +10,46 @@ export function spawnComplete(i: number): void {
   if (!G.layout) return;
   const r = G.layout.rects[i];
   const cx = r.x + r.w / 2, cy = r.y + r.h * 0.35;
-  G.fx.push({ type: 'ring', x: cx, y: cy, born: performance.now(), life: 600, r0: r.w * 0.4, r1: r.w * 1.3 });
   const col = PALETTE[G.tubes[i][0]] ?? '#fff';
-  for (let k = 0; k < 12; k++) {
-    const a = (Math.PI * 2 * k) / 12 + Math.random() * 0.35;
-    const sp = 0.06 + Math.random() * 0.08;
+  G.fx.push({ type: 'ring', x: cx, y: cy, born: performance.now(), life: 640, r0: r.w * 0.4, r1: r.w * 1.35, color: col });
+  G.fx.push({ type: 'ring', x: cx, y: cy, born: performance.now() + 90, life: 560, r0: r.w * 0.3, r1: r.w * 1.1, color: col });
+  for (let k = 0; k < 14; k++) {
+    const a = (Math.PI * 2 * k) / 14 + Math.random() * 0.35;
+    const sp = 0.07 + Math.random() * 0.09;
     G.fx.push({
       type: 'spark',
       x: cx, y: cy,
       vx: Math.cos(a) * sp * r.w,
       vy: Math.sin(a) * sp * r.w,
       born: performance.now(),
-      life: 560,
+      life: 600,
       size: r.w * 0.09,
+      color: col,
+    } as SparkFX);
+  }
+  startLoop();
+}
+
+// Small burst of shards where crystals land — fires on every pour for tactile juice.
+export function spawnLand(i: number, color: number): void {
+  if (!G.layout || !G.motion) return;
+  const r = G.layout.rects[i];
+  const innerBottom = r.y + r.h - r.innerPad;
+  const units = G.tubes[i].length;
+  const topY = Math.max(r.y + r.w * 0.25, innerBottom - units * r.unitH);
+  const cx = r.x + r.w / 2;
+  const col = PALETTE[color] ?? '#fff';
+  for (let k = 0; k < 6; k++) {
+    const a = -Math.PI / 2 + (Math.random() - 0.5) * 1.6;
+    const sp = 0.05 + Math.random() * 0.06;
+    G.fx.push({
+      type: 'spark',
+      x: cx + (Math.random() - 0.5) * r.w * 0.5, y: topY,
+      vx: Math.cos(a) * sp * r.w,
+      vy: Math.sin(a) * sp * r.w,
+      born: performance.now(),
+      life: 380,
+      size: r.w * 0.055,
       color: col,
     } as SparkFX);
   }
@@ -105,11 +132,12 @@ export function drawFX(): void {
     const age = performance.now() - p.born;
     const t = clamp01(age / p.life);
     if (p.type === 'ring') {
+      if (age < 0) continue;
       const r = p.r0 + (p.r1 - p.r0) * t;
       ctx.beginPath();
       ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
-      ctx.strokeStyle = `rgba(255,211,92,${0.8 * (1 - t)})`;
-      ctx.lineWidth = 3;
+      ctx.strokeStyle = p.color ? rgba(p.color, 0.85 * (1 - t)) : `rgba(255,211,92,${0.8 * (1 - t)})`;
+      ctx.lineWidth = 3 * (1 - t * 0.5);
       ctx.stroke();
     } else if (p.type === 'spark') {
       ctx.globalAlpha = 1 - t;

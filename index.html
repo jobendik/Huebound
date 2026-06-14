@@ -13,6 +13,24 @@
 <div id="app">
   <div id="aurora"></div>
 
+  <!-- Floating crystal dust -->
+  <div id="motes" aria-hidden="true">
+    <i style="left:8%;--s:3px;--d:19s;--delay:-2s;--dx:14px;--o:0.6"></i>
+    <i style="left:18%;--s:5px;--d:24s;--delay:-9s;--dx:-18px;--o:0.5"></i>
+    <i style="left:27%;--s:2px;--d:16s;--delay:-5s;--dx:10px;--o:0.7"></i>
+    <i style="left:36%;--s:4px;--d:21s;--delay:-13s;--dx:-12px;--o:0.55"></i>
+    <i style="left:45%;--s:3px;--d:18s;--delay:-1s;--dx:16px;--o:0.65"></i>
+    <i style="left:54%;--s:6px;--d:27s;--delay:-16s;--dx:-20px;--o:0.45"></i>
+    <i style="left:62%;--s:2px;--d:15s;--delay:-7s;--dx:12px;--o:0.7"></i>
+    <i style="left:71%;--s:4px;--d:22s;--delay:-11s;--dx:-14px;--o:0.55"></i>
+    <i style="left:80%;--s:3px;--d:20s;--delay:-3s;--dx:18px;--o:0.6"></i>
+    <i style="left:89%;--s:5px;--d:25s;--delay:-18s;--dx:-10px;--o:0.5"></i>
+    <i style="left:14%;--s:2px;--d:23s;--delay:-14s;--dx:-16px;--o:0.6"></i>
+    <i style="left:50%;--s:3px;--d:17s;--delay:-10s;--dx:14px;--o:0.65"></i>
+    <i style="left:67%;--s:4px;--d:26s;--delay:-6s;--dx:-12px;--o:0.5"></i>
+    <i style="left:33%;--s:2px;--d:14s;--delay:-12s;--dx:10px;--o:0.7"></i>
+  </div>
+
   <!-- Decorative crystal cave formations -->
   <svg class="cave-crystals bl" viewBox="0 0 130 210" fill="none" aria-hidden="true">
     <polygon points="0,210 28,135 56,162 48,210"  fill="rgba(110,70,255,0.14)"/>
@@ -153,6 +171,10 @@
         <div class="row">
           <div><div class="label">Sound effects</div><div class="desc">Crystal chimes and resonance</div></div>
           <div class="toggle" id="tg-sound" role="switch" tabindex="0" aria-label="Sound effects"></div>
+        </div>
+        <div class="row">
+          <div><div class="label">Vibration</div><div class="desc">Tactile feedback on taps and pours</div></div>
+          <div class="toggle" id="tg-haptics" role="switch" tabindex="0" aria-label="Vibration"></div>
         </div>
         <div class="row">
           <div><div class="label">Reduce motion</div><div class="desc">Calmer background and animations</div></div>

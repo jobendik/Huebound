@@ -24,6 +24,8 @@ export const G: GameState = {
   symbols: false,
   shakeI: -1,
   shakeT: 0,
+  settleI: -1,
+  settleT: 0,
   boardW: 0,
   boardH: 0,
 };
