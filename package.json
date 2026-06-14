@@ -1,0 +1,16 @@
+{
+  "name": "huebound",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Crystal sort puzzle — 150 levels of gem-sorting for CrazyGames",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "lint": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.5",
+    "vite": "^5.2.11"
+  }
+}
