@@ -32,6 +32,7 @@
 }
 
 *, *::before, *::after { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+[hidden] { display: none !important; }
 
 html, body {
   margin: 0; padding: 0; height: 100%; width: 100%;
@@ -384,3 +385,106 @@ body.calm #motes { display: none; }
 }
 
 .menu-foot #menu-progress { color: var(--ink-soft); font-weight: 700; }
+
+/* ============================================================
+   RETENTION / META UI — wallets, daily, shop, rewards, coach
+   ============================================================ */
+
+/* ── Wallets (menu foot + shop) ──────────────────────────── */
+.wallet { display: inline-flex; align-items: center; gap: 5px; font-weight: 800; }
+.wallet .ic { font-size: 1.05em; line-height: 1; }
+.shard-count { color: var(--accent2); text-shadow: 0 0 12px rgba(46,204,192,0.4); }
+.star-count  { color: var(--gold); text-shadow: 0 0 12px rgba(255,204,68,0.45); }
+.wallet.big { font-size: 18px; }
+
+/* ── Daily Challenge button + badge ──────────────────────── */
+.daily-btn { position: relative; }
+.daily-btn .dc-main { color: var(--gold); }
+.daily-badge {
+  position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+  background: linear-gradient(180deg, rgba(255,120,40,0.9), rgba(220,60,40,0.9));
+  color: #fff; font-weight: 800; font-size: 12px;
+  padding: 3px 9px; border-radius: 20px; box-shadow: 0 0 12px rgba(255,120,40,0.45);
+}
+.daily-badge.done { background: rgba(78,219,150,0.22); color: var(--good); box-shadow: none; border: 1px solid rgba(78,219,150,0.5); }
+
+/* ── HUD shard chip ──────────────────────────────────────── */
+.shard-chip .v { color: var(--accent2); }
+@media (max-width: 560px) { .shard-chip { display: none; } }
+
+/* ── Win screen extras ───────────────────────────────────── */
+.win-streak {
+  align-self: center; margin-bottom: 2px;
+  background: rgba(255,120,40,0.16); border: 1px solid rgba(255,140,40,0.42);
+  color: #ffb074; font-weight: 800; font-size: 13px; padding: 5px 14px; border-radius: 20px;
+  animation: badgePop .5s var(--ease-back);
+}
+.reward-line { font-weight: 700; color: var(--ink-soft); font-size: 14px; }
+.reward-line .ic { color: var(--accent2); }
+.reward-line b { color: var(--accent2); font-size: 16px; }
+.reward-btn {
+  background: linear-gradient(180deg, #ffd66b, #e3a31e);
+  border-color: rgba(255,255,255,0.4); color: #3a2600;
+  box-shadow: 0 8px 22px rgba(227,163,30,0.4), inset 0 1px 0 rgba(255,255,255,0.5);
+  text-shadow: none;
+}
+.reward-btn .ic { font-size: 14px; }
+.next-preview {
+  width: 100%; background: rgba(255,255,255,0.04);
+  border: 1px solid var(--panel-line-soft); border-radius: 14px; padding: 10px 12px;
+}
+.np-label { font-size: 12px; color: var(--ink-dim); margin-bottom: 7px; font-weight: 700; }
+.np-vials { display: flex; gap: 6px; justify-content: center; }
+.np-vial {
+  width: 16px; height: 48px; border-radius: 4px 4px 8px 8px;
+  border: 1px solid rgba(255,255,255,0.18); background: rgba(0,0,0,0.32);
+  position: relative; overflow: hidden;
+}
+.np-vial span { position: absolute; left: 1px; right: 1px; border-radius: 1px; box-shadow: inset 0 1px 0 rgba(255,255,255,0.3); }
+
+/* ── Daily reward & reward-prompt popups ─────────────────── */
+.dr-icon {
+  font-size: 50px; color: var(--accent2); line-height: 1;
+  filter: drop-shadow(0 0 18px rgba(46,204,192,0.65));
+  animation: vialFloat 3s ease-in-out infinite;
+}
+.dr-streak { color: var(--ink-soft); font-weight: 700; }
+.dr-amount { font-size: 36px; font-weight: 800; color: var(--gold); display: inline-flex; align-items: center; gap: 8px; }
+.dr-amount .ic { color: var(--accent2); font-size: 30px; }
+
+/* ── Shop ────────────────────────────────────────────────── */
+.shop-cat { font-weight: 800; margin: 10px 2px 8px; color: var(--ink-soft); font-size: 12px; text-transform: uppercase; letter-spacing: 1.4px; }
+.shop-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 10px; }
+.shop-item {
+  display: flex; flex-direction: column; align-items: center; gap: 7px;
+  padding: 12px 8px; border-radius: 16px; border: 1px solid var(--panel-line);
+  background: rgba(255,255,255,0.05); cursor: pointer; color: var(--ink);
+  transition: transform .12s var(--ease-back), box-shadow .15s, border-color .15s;
+}
+.shop-item:active { transform: scale(.94); }
+.shop-item .swatch { width: 48px; height: 48px; border-radius: 13px; border: 1px solid rgba(255,255,255,0.28); box-shadow: inset 0 2px 6px rgba(255,255,255,0.18); }
+.si-name { font-weight: 700; font-size: 13px; }
+.si-cta { font-size: 12px; font-weight: 800; color: var(--gold); }
+.shop-item.owned .si-cta { color: var(--ink-dim); }
+.shop-item.equipped { border-color: var(--accent2); box-shadow: 0 0 16px rgba(46,204,192,0.35); }
+.shop-item.equipped .si-cta { color: var(--accent2); }
+
+/* ── FTUE coach ──────────────────────────────────────────── */
+#coach { position: absolute; inset: 0; pointer-events: none; z-index: 8; opacity: 0; transition: opacity .25s ease; }
+#coach.show { opacity: 1; }
+.coach-finger {
+  position: absolute; font-size: 36px; transform: translate(-28%, -8%);
+  filter: drop-shadow(0 3px 7px rgba(0,0,0,0.6));
+  animation: fingerTap 1.1s ease-in-out infinite;
+}
+@keyframes fingerTap {
+  0%, 100% { transform: translate(-28%, -10%); }
+  50%      { transform: translate(-28%, 14%); }
+}
+.coach-bubble {
+  position: absolute; transform: translateX(-50%);
+  background: rgba(17,10,38,0.96); border: 1px solid var(--accent2); color: #fff;
+  font-weight: 700; font-size: 13px; line-height: 1.3; padding: 9px 14px;
+  border-radius: 14px; max-width: 210px; text-align: center;
+  box-shadow: 0 10px 26px rgba(0,0,0,0.55);
+}

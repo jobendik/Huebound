@@ -1,6 +1,6 @@
 import type { FXParticle, SparkFX } from '../types';
 import { G } from '../game/state';
-import { PALETTE, rgba } from './colors';
+import { pal, rgba } from './colors';
 import { ctx } from './canvas';
 import { wrapEl } from './canvas';
 import { startLoop } from './loop';
@@ -10,7 +10,7 @@ export function spawnComplete(i: number): void {
   if (!G.layout) return;
   const r = G.layout.rects[i];
   const cx = r.x + r.w / 2, cy = r.y + r.h * 0.35;
-  const col = PALETTE[G.tubes[i][0]] ?? '#fff';
+  const col = pal()[G.tubes[i][0]] ?? '#fff';
   G.fx.push({ type: 'ring', x: cx, y: cy, born: performance.now(), life: 640, r0: r.w * 0.4, r1: r.w * 1.35, color: col });
   G.fx.push({ type: 'ring', x: cx, y: cy, born: performance.now() + 90, life: 560, r0: r.w * 0.3, r1: r.w * 1.1, color: col });
   for (let k = 0; k < 14; k++) {
@@ -38,7 +38,7 @@ export function spawnLand(i: number, color: number): void {
   const units = G.tubes[i].length;
   const topY = Math.max(r.y + r.w * 0.25, innerBottom - units * r.unitH);
   const cx = r.x + r.w / 2;
-  const col = PALETTE[color] ?? '#fff';
+  const col = pal()[color] ?? '#fff';
   for (let k = 0; k < 6; k++) {
     const a = -Math.PI / 2 + (Math.random() - 0.5) * 1.6;
     const sp = 0.05 + Math.random() * 0.06;
@@ -73,7 +73,7 @@ export function spawnCrystalRain(): void {
       born: performance.now(),
       life: 2000 + Math.random() * 900,
       size: 4 + Math.random() * 7,
-      color: PALETTE[k % PALETTE.length] as string,
+      color: pal()[k % pal().length] as string,
       sides: shapes[Math.floor(Math.random() * shapes.length)],
     });
   }
