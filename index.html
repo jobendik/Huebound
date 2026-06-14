@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#0a0520">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="description" content="Sort crystal shards by color. A unique gem-sorting puzzle with 150 handcrafted levels.">
+  <title>Huebound — Crystal Sort Puzzle</title>
+</head>
+<body>
+<div id="app">
+  <div id="aurora"></div>
+
+  <!-- ── Main Menu ───────────────────────────────────────── -->
+  <section id="menu" class="screen" aria-label="Main menu">
+    <div class="brand">
+      <div class="logo-row" aria-hidden="true">
+        <!-- Logo vials showing crystal shard layers -->
+        <div class="logo-vial">
+          <i style="height:58%;bottom:2px;background:linear-gradient(180deg,#e53e3e,#9b2c2c)"></i>
+        </div>
+        <div class="logo-vial" style="height:72px">
+          <i style="height:28%;bottom:2px;background:linear-gradient(180deg,#5a67d8,#3c4db5)"></i>
+          <i style="height:26%;bottom:31%;background:linear-gradient(180deg,#805ad5,#6b46c1)"></i>
+          <i style="height:22%;bottom:58%;background:linear-gradient(180deg,#38a169,#2f855a)"></i>
+        </div>
+        <div class="logo-vial" style="height:56px">
+          <i style="height:48%;bottom:2px;background:linear-gradient(180deg,#d69e2e,#b7791f)"></i>
+        </div>
+      </div>
+      <h1 class="title">Huebound</h1>
+      <div class="tag">Sort crystals. Discover their true hue.</div>
+    </div>
+    <div class="menu-actions">
+      <button class="btn primary wide" id="btn-continue">Continue</button>
+      <button class="btn wide" id="btn-play">Start from Level 1</button>
+      <button class="btn wide" id="btn-levels">Levels</button>
+      <div style="display:flex;gap:12px">
+        <button class="btn ghost" style="flex:1" id="btn-howto">How to Play</button>
+        <button class="btn ghost" style="flex:1" id="btn-settings">Settings</button>
+      </div>
+    </div>
+    <div class="menu-foot">
+      <span class="star-count">&#9830; <span id="menu-stars">0</span></span>
+      gems collected &middot; <span id="menu-progress">Level 1 unlocked</span>
+    </div>
+  </section>
+
+  <!-- ── Gameplay ────────────────────────────────────────── -->
+  <section id="play" class="screen" aria-label="Gameplay">
+    <div id="hud">
+      <button class="btn icon ghost" id="btn-pause" aria-label="Menu">&#9776;</button>
+      <div class="level-tag">Level <span id="hud-level">1</span></div>
+      <div class="spacer"></div>
+      <div class="chip"><div class="k">Moves</div><div class="v" id="hud-moves">0</div></div>
+      <div class="chip optional-chip"><div class="k">Target</div><div class="v" id="hud-target">0</div></div>
+      <div class="chip optional-chip"><div class="k">Best</div><div class="v" id="hud-best">&#8212;</div></div>
+      <div class="chip"><div class="k">Time</div><div class="v" id="hud-time">0:00</div></div>
+    </div>
+    <div id="board-wrap">
+      <canvas id="board"></canvas>
+      <div id="toast" role="status"></div>
+    </div>
+    <div id="actionbar">
+      <button class="btn ghost" id="btn-undo"><span class="ic">&#8634;</span>Undo</button>
+      <button class="btn ghost" id="btn-hint"><span class="ic">&#128161;</span>Hint</button>
+      <button class="btn ghost" id="btn-restart"><span class="ic">&#10227;</span>Restart</button>
+    </div>
+  </section>
+
+  <!-- ── Levels overlay ──────────────────────────────────── -->
+  <div id="levels" class="overlay">
+    <div class="sheet card">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <h2>Levels</h2>
+        <button class="btn icon ghost" data-close="levels" aria-label="Close">&#10005;</button>
+      </div>
+      <div class="scroll"><div class="lvl-grid" id="lvl-grid"></div></div>
+    </div>
+  </div>
+
+  <!-- ── How to Play ─────────────────────────────────────── -->
+  <div id="howto" class="overlay">
+    <div class="sheet card">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <h2>How to Play</h2>
+        <button class="btn icon ghost" data-close="howto" aria-label="Close">&#10005;</button>
+      </div>
+      <div class="scroll">
+        <div class="mini-vials" aria-hidden="true">
+          <div class="mv">
+            <span style="bottom:2px;background:#3182ce"></span>
+            <span style="bottom:16px;background:#e53e3e"></span>
+            <span style="bottom:30px;background:#d69e2e"></span>
+            <span style="bottom:44px;background:#d69e2e"></span>
+          </div>
+          <div class="mv">
+            <span style="bottom:2px;background:#38a169"></span>
+            <span style="bottom:16px;background:#d69e2e"></span>
+          </div>
+          <div class="mv"></div>
+        </div>
+        <div class="how-step">
+          <div class="num">1</div>
+          <p>Tap a crystal tube to select it, then tap another tube to pour the shards in.</p>
+        </div>
+        <div class="how-step">
+          <div class="num">2</div>
+          <p>You can only pour onto an <b>empty</b> tube, or onto the <b>same crystal type</b> on top.</p>
+        </div>
+        <div class="how-step">
+          <div class="num">3</div>
+          <p>Only matching shards on top move together &mdash; and only while there is room.</p>
+        </div>
+        <div class="how-step">
+          <div class="num">4</div>
+          <p>Win by making every tube either <b>empty</b> or <b>filled with one crystal type</b>.</p>
+        </div>
+        <div class="how-step">
+          <div class="num">5</div>
+          <p>Stuck? Use <b>Undo</b>, ask for a <b>Hint</b>, or <b>Restart</b>. No timer pressure &mdash; take your time.</p>
+        </div>
+      </div>
+      <button class="btn primary wide" data-close="howto">Got it</button>
+    </div>
+  </div>
+
+  <!-- ── Settings ────────────────────────────────────────── -->
+  <div id="settings" class="overlay">
+    <div class="sheet card">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <h2>Settings</h2>
+        <button class="btn icon ghost" data-close="settings" aria-label="Close">&#10005;</button>
+      </div>
+      <div class="scroll">
+        <div class="row">
+          <div><div class="label">Sound effects</div><div class="desc">Crystal chimes and resonance</div></div>
+          <div class="toggle" id="tg-sound" role="switch" tabindex="0" aria-label="Sound effects"></div>
+        </div>
+        <div class="row">
+          <div><div class="label">Reduce motion</div><div class="desc">Calmer background and animations</div></div>
+          <div class="toggle" id="tg-motion" role="switch" tabindex="0" aria-label="Reduce motion"></div>
+        </div>
+        <div class="row">
+          <div><div class="label">Color symbols</div><div class="desc">Add shapes to crystals for clarity</div></div>
+          <div class="toggle" id="tg-symbols" role="switch" tabindex="0" aria-label="Color symbols"></div>
+        </div>
+        <div class="row">
+          <div><div class="label">Reset progress</div><div class="desc">Clear all levels and best scores</div></div>
+          <button class="btn ghost" id="btn-reset" style="min-width:90px">Reset</button>
+        </div>
+      </div>
+      <button class="btn primary wide" data-close="settings">Done</button>
+    </div>
+  </div>
+
+  <!-- ── Pause ───────────────────────────────────────────── -->
+  <div id="pause" class="overlay">
+    <div class="sheet card" style="width:min(360px,90vw)">
+      <h2 style="text-align:center">Paused</h2>
+      <button class="btn primary wide" id="pz-resume">Resume</button>
+      <button class="btn wide" id="pz-restart">Restart Level</button>
+      <button class="btn wide" id="pz-levels">Level Select</button>
+      <button class="btn ghost wide" id="pz-settings">Settings</button>
+      <button class="btn ghost wide" id="pz-menu">Main Menu</button>
+    </div>
+  </div>
+
+  <!-- ── Win ─────────────────────────────────────────────── -->
+  <div id="win" class="overlay">
+    <div class="sheet card">
+      <h2 id="win-title">Sorted!</h2>
+      <div class="win-stars" id="win-stars" aria-hidden="true">
+        <span class="s">&#9830;</span>
+        <span class="s">&#9830;</span>
+        <span class="s">&#9830;</span>
+      </div>
+      <div id="win-best" style="min-height:24px"></div>
+      <div class="win-meta">
+        <div>Moves <b id="win-moves">0</b></div>
+        <div>Time <b id="win-time">0:00</b></div>
+      </div>
+      <div class="win-actions">
+        <button class="btn ghost" id="win-replay">Replay</button>
+        <button class="btn primary" id="win-next">Next &rarr;</button>
+      </div>
+      <button class="btn ghost wide" id="win-levels">Level Select</button>
+    </div>
+  </div>
+</div>
+<script type="module" src="/src/main.ts"></script>
+</body>
+</html>

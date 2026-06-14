@@ -1,0 +1,286 @@
+/* ============================================================
+   HUEBOUND — Crystal Sort Puzzle
+   Theme: gemstone cave — faceted crystals under deep violet light.
+   ============================================================ */
+:root {
+  --bg0: #020109;
+  --bg1: #0a0520;
+  --bg2: #130930;
+  --panel: rgba(14, 8, 32, 0.88);
+  --panel-line: rgba(148, 120, 220, 0.20);
+  --ink: #f0eaff;
+  --ink-soft: #b0a0d8;
+  --ink-dim: #7860a8;
+  --accent: #7c5cff;
+  --accent2: #2eccc0;
+  --accent3: #ff5ab8;
+  --good: #4edb96;
+  --warn: #ff5e5e;
+  --gold: #ffcc44;
+  --radius: 18px;
+  --tap: 54px;
+  --safe-t: env(safe-area-inset-top, 0px);
+  --safe-b: env(safe-area-inset-bottom, 0px);
+  --safe-l: env(safe-area-inset-left, 0px);
+  --safe-r: env(safe-area-inset-right, 0px);
+  --font: ui-rounded, "SF Pro Rounded", "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+}
+
+*, *::before, *::after { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+  margin: 0; padding: 0; height: 100%; width: 100%;
+  overflow: hidden; position: fixed; inset: 0;
+  background: var(--bg0); color: var(--ink); font-family: var(--font);
+  -webkit-user-select: none; user-select: none;
+  touch-action: none; overscroll-behavior: none;
+}
+
+/* ── App background — deep crystal cave ─────────────────── */
+#app {
+  position: absolute; inset: 0; overflow: hidden;
+  background:
+    radial-gradient(110% 70% at 12% -8%,  rgba(100, 40, 220, 0.50), transparent 60%),
+    radial-gradient(100% 80% at 88% 5%,   rgba(20, 200, 200, 0.14), transparent 55%),
+    radial-gradient(120% 100% at 50% 120%, rgba(180, 40, 240, 0.14), transparent 55%),
+    linear-gradient(160deg, var(--bg1), var(--bg0) 70%);
+}
+
+/* Crystal cave ambient glow — slower, more geometric than liquid aurora */
+#aurora {
+  position: absolute; inset: -20%; pointer-events: none;
+  opacity: 0.85; filter: blur(24px);
+  background:
+    radial-gradient(38% 38% at 28% 32%, rgba(120, 80, 255, 0.32), transparent 70%),
+    radial-gradient(42% 42% at 72% 62%, rgba(30, 200, 190, 0.18), transparent 70%),
+    radial-gradient(30% 30% at 55% 85%, rgba(200, 50, 255, 0.14), transparent 70%);
+  animation: cavePulse 28s ease-in-out infinite alternate;
+}
+@keyframes cavePulse {
+  0%   { transform: translate(-3%, -2%) scale(1.04); }
+  50%  { transform: translate(4%, 2%) scale(1.10); filter: blur(28px); }
+  100% { transform: translate(6%, 5%) scale(1.16); }
+}
+@media (prefers-reduced-motion: reduce) { #aurora { animation: none; } }
+body.calm #aurora { animation: none; }
+
+/* ── Screens ─────────────────────────────────────────────── */
+.screen {
+  position: absolute; inset: 0; display: flex; flex-direction: column;
+  padding: calc(var(--safe-t) + 8px) calc(var(--safe-r) + 14px)
+           calc(var(--safe-b) + 8px) calc(var(--safe-l) + 14px);
+  opacity: 0; visibility: hidden; transform: translateY(8px);
+  transition: opacity .26s ease, transform .26s ease, visibility .26s;
+}
+.screen.active { opacity: 1; visibility: visible; transform: none; }
+
+/* ── Buttons ─────────────────────────────────────────────── */
+.btn {
+  appearance: none; border: 0; cursor: pointer;
+  font-family: var(--font); font-weight: 700; color: var(--ink);
+  background: linear-gradient(180deg, rgba(255,255,255,0.09), rgba(255,255,255,0.02));
+  border: 1px solid var(--panel-line); border-radius: 14px;
+  padding: 14px 18px; min-height: var(--tap); font-size: 16px; letter-spacing: .2px;
+  transition: transform .08s ease, filter .15s ease, background .15s ease;
+  display: inline-flex; align-items: center; justify-content: center; gap: 9px;
+}
+.btn:active { transform: scale(.96); }
+.btn:focus-visible { outline: 3px solid var(--accent2); outline-offset: 2px; }
+.btn.primary {
+  background: linear-gradient(180deg, #9270ff, #5e3de8);
+  border-color: rgba(255,255,255,0.22);
+  box-shadow: 0 8px 24px rgba(94, 61, 232, 0.50); color: #fff;
+}
+.btn.ghost { background: rgba(255,255,255,0.04); }
+.btn.icon { padding: 0; width: var(--tap); height: var(--tap); border-radius: 16px; font-size: 22px; }
+.btn.wide { width: 100%; }
+.btn[disabled] { opacity: .4; cursor: default; transform: none; }
+
+/* ── Cards / panels ──────────────────────────────────────── */
+.card {
+  background: var(--panel);
+  border: 1px solid var(--panel-line);
+  border-radius: var(--radius);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: 0 20px 56px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.06);
+}
+
+/* ── Main menu ───────────────────────────────────────────── */
+#menu { align-items: center; justify-content: center; text-align: center; }
+
+.brand { display: flex; flex-direction: column; align-items: center; gap: 6px; margin-bottom: 26px; }
+.logo-row {
+  display: flex; gap: 12px; align-items: flex-end; margin-bottom: 14px;
+}
+.logo-vial {
+  width: 26px; height: 64px; border-radius: 8px 8px 13px 13px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.14), rgba(255,255,255,0.03));
+  border: 1.5px solid rgba(255,255,255,0.24); position: relative; overflow: hidden;
+}
+/* Crystal layers shown as sharp-cut segments, not smooth liquid */
+.logo-vial > i {
+  position: absolute; left: 2px; right: 2px; border-radius: 2px;
+  display: block;
+}
+.logo-vial > i::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.28), transparent 55%);
+}
+
+.title {
+  font-size: clamp(40px, 12vw, 68px); font-weight: 800; margin: 0;
+  line-height: .92; letter-spacing: .5px;
+  background: linear-gradient(125deg, #fff 0%, #c8b0ff 38%, var(--accent2) 75%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.tag { color: var(--ink-soft); font-size: 15px; margin-top: 6px; font-weight: 600; letter-spacing: .4px; }
+
+.menu-actions { display: flex; flex-direction: column; gap: 12px; width: min(340px, 82vw); }
+.menu-foot { margin-top: 20px; color: var(--ink-dim); font-size: 12.5px; }
+.star-count { display: inline-flex; align-items: center; gap: 6px; color: var(--gold); font-weight: 800; }
+
+/* ── Overlays ────────────────────────────────────────────── */
+.overlay {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  padding: calc(var(--safe-t) + 14px) 14px calc(var(--safe-b) + 14px);
+  background: rgba(4,2,14,0.60); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+  opacity: 0; visibility: hidden; transition: opacity .2s ease, visibility .2s; z-index: 30;
+}
+.overlay.active { opacity: 1; visibility: visible; }
+
+.sheet {
+  width: min(460px, 94vw); max-height: 88vh;
+  display: flex; flex-direction: column; padding: 20px; gap: 14px;
+  transform: translateY(14px); transition: transform .24s ease;
+}
+.overlay.active .sheet { transform: none; }
+.sheet h2 { margin: 0; font-size: 24px; font-weight: 800; }
+.sheet .scroll { overflow-y: auto; -webkit-overflow-scrolling: touch; touch-action: pan-y; padding-right: 2px; }
+
+.row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 4px; }
+.row + .row { border-top: 1px solid rgba(255,255,255,0.06); }
+.row .label { font-weight: 700; font-size: 16px; }
+.row .desc { color: var(--ink-dim); font-size: 12.5px; margin-top: 2px; }
+
+/* ── Toggle switch ───────────────────────────────────────── */
+.toggle {
+  width: 58px; height: 32px; border-radius: 18px;
+  background: rgba(255,255,255,0.11);
+  border: 1px solid var(--panel-line);
+  position: relative; cursor: pointer; flex: 0 0 auto; transition: background .18s;
+}
+.toggle::after {
+  content: ''; position: absolute; top: 3px; left: 3px; width: 24px; height: 24px;
+  border-radius: 50%; background: #fff;
+  transition: transform .18s ease; box-shadow: 0 2px 6px rgba(0,0,0,.4);
+}
+.toggle.on { background: linear-gradient(90deg, var(--accent), var(--accent2)); }
+.toggle.on::after { transform: translateX(26px); }
+
+/* ── How-to-play ─────────────────────────────────────────── */
+.how-step { display: flex; gap: 14px; align-items: center; padding: 10px 0; }
+.how-step .num {
+  flex: 0 0 auto; width: 34px; height: 34px; border-radius: 50%;
+  display: grid; place-items: center; font-weight: 800;
+  background: rgba(120, 80, 255, 0.22); border: 1px solid var(--panel-line); color: #fff;
+}
+.how-step p { margin: 0; color: var(--ink-soft); font-size: 14.5px; line-height: 1.35; }
+
+.mini-vials { display: flex; gap: 8px; justify-content: center; padding: 8px 0 2px; }
+.mv {
+  width: 22px; height: 54px; border-radius: 6px 6px 11px 11px;
+  border: 1.5px solid rgba(255,255,255,0.22);
+  background: rgba(255,255,255,0.04); position: relative; overflow: hidden;
+}
+.mv > span { position: absolute; left: 2px; right: 2px; height: 12px; border-radius: 2px; }
+
+/* ── Level selector ──────────────────────────────────────── */
+#levels .sheet { width: min(540px, 96vw); }
+.lvl-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(58px, 1fr)); gap: 10px; }
+.lvl {
+  aspect-ratio: 1/1; border-radius: 14px; border: 1px solid var(--panel-line);
+  background: rgba(255,255,255,0.05);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  font-weight: 800; font-size: 17px; cursor: pointer; color: var(--ink);
+  position: relative; transition: transform .08s;
+}
+.lvl:active { transform: scale(.94); }
+.lvl.locked { color: var(--ink-dim); background: rgba(255,255,255,0.02); cursor: default; }
+.lvl.cleared {
+  background: linear-gradient(180deg, rgba(120,80,255,0.22), rgba(46,204,192,0.10));
+  border-color: rgba(148,120,220,0.44);
+}
+.lvl.current { outline: 2px solid var(--accent2); outline-offset: 2px; }
+.lvl .st { font-size: 9px; letter-spacing: 1px; margin-top: 3px; color: var(--gold); height: 10px; }
+.lvl .lock { font-size: 16px; opacity: .7; }
+
+/* ── Gameplay screen ─────────────────────────────────────── */
+#play { padding-top: calc(var(--safe-t) + 6px); }
+#hud { display: flex; align-items: center; gap: 10px; }
+#hud .spacer { flex: 1; }
+
+.chip {
+  background: rgba(255,255,255,0.06); border: 1px solid var(--panel-line);
+  border-radius: 12px; padding: 8px 12px; min-width: 74px; text-align: center;
+}
+.chip .k { font-size: 10.5px; color: var(--ink-dim); letter-spacing: 1.2px; text-transform: uppercase; }
+.chip .v { font-size: 18px; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1.1; }
+
+.level-tag { font-weight: 800; font-size: 17px; padding: 0 4px; }
+
+#board-wrap { flex: 1; position: relative; min-height: 0; margin-top: 6px; }
+#board { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; }
+
+#toast {
+  position: absolute; left: 50%; top: 14px;
+  transform: translateX(-50%) translateY(-12px);
+  background: rgba(14, 8, 32, 0.94); border: 1px solid var(--panel-line);
+  padding: 9px 16px; border-radius: 30px;
+  font-weight: 700; font-size: 14px;
+  opacity: 0; transition: opacity .2s, transform .2s;
+  pointer-events: none; z-index: 6;
+}
+#toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+#actionbar { display: flex; gap: 10px; justify-content: center; padding-top: 8px; }
+#actionbar .btn {
+  flex: 1; max-width: 120px;
+  flex-direction: column; gap: 3px; min-height: 60px; font-size: 12px; padding: 8px;
+}
+#actionbar .btn .ic { font-size: 20px; }
+
+/* ── Win panel ───────────────────────────────────────────── */
+#win .sheet { text-align: center; align-items: center; }
+.win-stars { display: flex; gap: 14px; justify-content: center; margin: 6px 0 2px; }
+.win-stars .s {
+  font-size: 46px; color: rgba(255,255,255,0.18);
+  transform: scale(.6); transition: transform .3s, color .3s;
+}
+.win-stars .s.lit {
+  color: var(--gold); transform: scale(1);
+  text-shadow: 0 0 20px rgba(255,204,68,0.75);
+}
+.win-meta { display: flex; gap: 18px; justify-content: center; color: var(--ink-soft); font-weight: 700; }
+.win-meta b { color: #fff; }
+.best-badge {
+  display: inline-flex; gap: 6px; align-items: center;
+  color: var(--gold); font-weight: 800;
+  background: rgba(255,204,68,0.12); border: 1px solid rgba(255,204,68,0.40);
+  padding: 5px 12px; border-radius: 20px; font-size: 13px;
+}
+.win-actions { display: flex; gap: 10px; width: 100%; }
+.win-actions .btn { flex: 1; }
+.hint { color: var(--ink-dim); font-size: 12px; text-align: center; }
+
+/* ── Responsive tweaks ───────────────────────────────────── */
+@media (max-width: 560px) {
+  .optional-chip { display: none; }
+  .level-tag { font-size: 15px; }
+  #hud { gap: 7px; }
+  .chip { min-width: 62px; padding: 7px 9px; }
+  .chip .v { font-size: 16px; }
+}
+
+.menu-foot #menu-progress { color: var(--ink-soft); font-weight: 700; }
