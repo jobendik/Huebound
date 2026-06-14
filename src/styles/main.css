@@ -488,3 +488,106 @@ body.calm #motes { display: none; }
   border-radius: 14px; max-width: 210px; text-align: center;
   box-shadow: 0 10px 26px rgba(0,0,0,0.55);
 }
+
+/* ============================================================
+   PROGRESSION / OBJECTIVES UI — player strip, XP, goals, medals
+   ============================================================ */
+
+/* ── Menu player strip ───────────────────────────────────── */
+.player-strip {
+  display: flex; align-items: center; gap: 12px; width: min(340px, 82vw);
+  margin: 18px auto 0; padding: 10px 14px; border-radius: 16px;
+  background: rgba(255,255,255,0.05); border: 1px solid var(--panel-line);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.06);
+}
+.ps-level {
+  flex: 0 0 auto; width: 40px; height: 40px; border-radius: 50%;
+  display: grid; place-items: center; font-weight: 800; font-size: 17px; color: #fff;
+  background: linear-gradient(180deg, #a07cff, var(--accent-deep));
+  box-shadow: 0 4px 12px rgba(94,61,232,0.5), inset 0 1px 0 rgba(255,255,255,0.4);
+}
+.ps-mid { flex: 1; min-width: 0; text-align: left; }
+.ps-title { font-weight: 800; font-size: 14px; color: var(--ink); margin-bottom: 5px; }
+.ps-wallets { display: flex; flex-direction: column; gap: 3px; align-items: flex-end; font-size: 13px; }
+
+/* ── XP bar ──────────────────────────────────────────────── */
+.xp-bar {
+  height: 9px; border-radius: 6px; background: rgba(0,0,0,0.35);
+  overflow: hidden; border: 1px solid rgba(255,255,255,0.10);
+}
+.xp-bar.small { height: 7px; }
+.xp-bar > i {
+  display: block; height: 100%; width: 0%;
+  background: linear-gradient(90deg, var(--accent), var(--accent2));
+  box-shadow: 0 0 10px rgba(120,90,255,0.5);
+}
+
+/* ── Win progress stack ──────────────────────────────────── */
+.prog-stack { width: 100%; display: flex; flex-direction: column; gap: 9px; margin: 2px 0; }
+.xp-row { display: flex; align-items: center; gap: 10px; }
+.xp-lvl { font-weight: 800; font-size: 13px; color: var(--ink-soft); min-width: 38px; text-align: left; }
+.xp-row .xp-bar { flex: 1; }
+.xp-gain { font-weight: 800; font-size: 13px; color: var(--accent2); min-width: 52px; text-align: right; }
+
+.win-orders { display: flex; flex-direction: column; gap: 6px; width: 100%; }
+.wo-row {
+  position: relative; display: flex; align-items: center; justify-content: space-between;
+  gap: 8px; padding: 7px 11px; border-radius: 11px; overflow: hidden;
+  background: rgba(255,255,255,0.045); border: 1px solid var(--panel-line-soft);
+  font-size: 12.5px; font-weight: 700; color: var(--ink-soft);
+}
+.wo-row .wo-bar {
+  position: absolute; left: 0; bottom: 0; height: 3px;
+  background: linear-gradient(90deg, var(--accent), var(--accent2)); transition: width .5s var(--ease-out);
+}
+.wo-row.done { color: var(--good); border-color: rgba(78,219,150,0.4); background: rgba(78,219,150,0.10); }
+.wo-row.flash { animation: orderFlash .9s ease; }
+@keyframes orderFlash { 0%,100% { box-shadow: none; } 40% { box-shadow: 0 0 18px rgba(78,219,150,0.6); } }
+.wo-text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.wo-prog { flex: 0 0 auto; font-variant-numeric: tabular-nums; }
+
+/* ── Medals row ──────────────────────────────────────────── */
+.win-medals { display: flex; flex-wrap: wrap; gap: 7px; justify-content: center; min-height: 0; }
+.win-medals:empty { display: none; }
+.medal {
+  font-weight: 800; font-size: 12px; padding: 4px 11px; border-radius: 20px;
+  background: linear-gradient(180deg, rgba(255,204,68,0.20), rgba(255,170,40,0.10));
+  border: 1px solid rgba(255,204,68,0.45); color: var(--gold);
+  animation: badgePop .45s var(--ease-back);
+}
+
+/* ── Next best action ────────────────────────────────────── */
+.next-action {
+  font-size: 13px; font-weight: 700; color: var(--accent2); text-align: center; min-height: 0;
+}
+.next-action:empty { display: none; }
+
+/* ── Goals button pip ────────────────────────────────────── */
+#btn-goals { position: relative; }
+.goal-pip {
+  display: inline-grid; place-items: center; min-width: 20px; height: 20px; padding: 0 5px;
+  border-radius: 12px; background: var(--accent3); color: #fff; font-size: 12px; font-weight: 800;
+  margin-left: 4px;
+}
+
+/* ── Goals overlay ───────────────────────────────────────── */
+.reroll-note { font-weight: 600; color: var(--ink-dim); text-transform: none; letter-spacing: 0; font-size: 11px; }
+.order-row { display: flex; align-items: center; gap: 10px; padding: 11px 12px; border-radius: 14px;
+  background: rgba(255,255,255,0.05); border: 1px solid var(--panel-line); margin-bottom: 9px; }
+.order-row.done { border-color: rgba(78,219,150,0.4); background: rgba(78,219,150,0.10); }
+.or-main { flex: 1; min-width: 0; }
+.or-text { font-weight: 700; font-size: 14px; margin-bottom: 7px; }
+.or-bar { height: 7px; border-radius: 5px; background: rgba(0,0,0,0.35); overflow: hidden; }
+.or-bar > i { display: block; height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent2)); transition: width .4s var(--ease-out); }
+.or-side { flex: 0 0 auto; display: flex; align-items: center; gap: 8px; }
+.or-reward { font-weight: 800; font-size: 13px; color: var(--gold); }
+.or-done { font-weight: 800; font-size: 20px; color: var(--good); }
+.or-reroll { appearance: none; border: 1px solid var(--panel-line); background: rgba(255,255,255,0.06);
+  color: var(--ink); width: 32px; height: 32px; border-radius: 10px; font-size: 16px; cursor: pointer; }
+.or-reroll:active { transform: scale(.9); }
+
+.weekly-card { background: rgba(255,255,255,0.05); border: 1px solid var(--panel-line); border-radius: 14px; padding: 14px; }
+.weekly-top { display: flex; justify-content: space-between; font-weight: 700; font-size: 14px; margin-bottom: 10px; }
+.weekly-dots { display: flex; gap: 8px; margin-bottom: 10px; }
+.wk-dot { flex: 1; height: 10px; border-radius: 6px; background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.1); }
+.wk-dot.on { background: linear-gradient(90deg, var(--accent), var(--accent2)); box-shadow: 0 0 10px rgba(120,90,255,0.4); }

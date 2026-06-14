@@ -17,6 +17,7 @@ import { showScreen, openOverlay, closeOverlay, updateMenuStars } from './overla
 import { applySettings } from './settings';
 import { updateHUD } from './hud';
 import { buildShop } from './shop';
+import { buildGoals, initGoals } from './goals';
 import { claimDailyAndClose } from './daily';
 import { showRewardPrompt } from './rewardPrompt';
 import { toast } from './toast';
@@ -176,6 +177,9 @@ export function initUI(): void {
   document.getElementById('btn-shop')?.addEventListener('click', () => {
     AudioEngine.unlock(); AudioEngine.button(); buildShop(); openOverlay('shop');
   });
+  document.getElementById('btn-goals')?.addEventListener('click', () => {
+    AudioEngine.unlock(); AudioEngine.button(); buildGoals(); openOverlay('goals');
+  });
   document.getElementById('btn-howto')?.addEventListener('click', () => {
     AudioEngine.button(); openOverlay('howto');
   });
@@ -188,8 +192,10 @@ export function initUI(): void {
     b.addEventListener('click', () => {
       AudioEngine.button();
       closeOverlay(b.getAttribute('data-close')!);
+      updateMenuStars();
     });
   });
+  initGoals();
 
   // ── In-game HUD ────────────────────────────────────────
   document.getElementById('btn-pause')?.addEventListener('click', () => { AudioEngine.button(); pauseGame(); });

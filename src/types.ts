@@ -113,6 +113,36 @@ export interface Cosmetics {
   owned: string[];       // owned cosmetic ids (skins + themes)
 }
 
+export interface DailyOrder {
+  id: string;
+  kind: 'win' | 'perfect' | 'daily' | 'tubes' | 'pours';
+  text: string;
+  target: number;
+  progress: number;
+  reward: number;        // shards
+  done: boolean;
+  claimed: boolean;
+}
+
+export interface ObjectivesState {
+  day: string;
+  orders: DailyOrder[];
+  rerolled: boolean;     // one free reroll per day
+}
+
+export interface WeeklyState {
+  week: string;          // ISO week key
+  days: string[];        // distinct YYYY-MM-DD played this week
+  claimed: boolean;      // weekly activity bonus claimed
+}
+
+export interface PlayerStats {
+  wins: number;
+  perfects: number;
+  tubes: number;
+  pours: number;
+}
+
 export interface SaveData {
   version: number;
   started: boolean;
@@ -121,11 +151,15 @@ export interface SaveData {
   best: Record<string, BestRecord>;
   settings: Settings;
   shards: number;        // spendable soft currency (crystal shards)
+  xp: number;            // account XP (player level derived from this)
   winStreak: number;     // consecutive level wins (resets on quit-to-menu/loss)
   tutorialDone: boolean;
   daily: DailyState;
   challenge: ChallengeState;
   cosmetics: Cosmetics;
+  objectives: ObjectivesState;
+  weekly: WeeklyState;
+  stats: PlayerStats;
 }
 
 export interface HintMove {

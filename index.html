@@ -76,17 +76,29 @@
         <span class="daily-badge" id="daily-badge" hidden></span>
       </button>
       <div style="display:flex;gap:12px">
-        <button class="btn ghost" style="flex:1" id="btn-levels">Levels</button>
+        <button class="btn ghost" style="flex:1" id="btn-goals">
+          Goals <span class="goal-pip" id="goals-pip" hidden></span>
+        </button>
         <button class="btn ghost" style="flex:1" id="btn-shop">Shop</button>
       </div>
       <div style="display:flex;gap:12px">
-        <button class="btn ghost" style="flex:1" id="btn-howto">How to Play</button>
+        <button class="btn ghost" style="flex:1" id="btn-levels">Levels</button>
         <button class="btn ghost" style="flex:1" id="btn-settings">Settings</button>
+      </div>
+      <button class="btn ghost wide" id="btn-howto">How to Play</button>
+    </div>
+    <div class="player-strip">
+      <div class="ps-level" id="ps-level">1</div>
+      <div class="ps-mid">
+        <div class="ps-title" id="ps-title">Novice</div>
+        <div class="xp-bar small"><i id="ps-xp-fill"></i></div>
+      </div>
+      <div class="ps-wallets">
+        <span class="wallet shard-count"><span class="ic">&#9670;</span> <span id="menu-shards">0</span></span>
+        <span class="wallet star-count"><span class="ic">&#9733;</span> <span id="menu-stars">0</span></span>
       </div>
     </div>
     <div class="menu-foot">
-      <span class="wallet shard-count"><span class="ic">&#9670;</span> <span id="menu-shards">0</span></span>
-      <span class="wallet star-count"><span class="ic">&#9733;</span> <span id="menu-stars">0</span></span>
       <span id="menu-progress">Level 1 unlocked</span>
     </div>
   </section>
@@ -230,17 +242,32 @@
         <span class="s">&#9733;</span>
         <span class="s">&#9733;</span>
       </div>
-      <div id="win-best" style="min-height:22px"></div>
+      <div id="win-best" style="min-height:20px"></div>
+      <div class="win-medals" id="win-medals" aria-hidden="true"></div>
       <div class="win-meta">
         <div>Moves <b id="win-moves">0</b></div>
         <div>Time <b id="win-time">0:00</b></div>
       </div>
+
+      <!-- Progress stack (§4.3): XP/level + daily orders -->
+      <div class="prog-stack">
+        <div class="xp-row">
+          <span class="xp-lvl" id="win-xp-lvl">Lv 1</span>
+          <div class="xp-bar"><i id="win-xp-fill"></i></div>
+          <span class="xp-gain" id="win-xp-gain">+0</span>
+        </div>
+        <div id="win-orders" class="win-orders"></div>
+      </div>
+
       <div class="reward-line">
         <span class="ic">&#9670;</span> <b id="win-shards">+0</b> shards earned
       </div>
       <button class="btn reward-btn wide" id="win-double" hidden>
         <span class="ic">&#9654;</span> Watch ad &mdash; double shards
       </button>
+
+      <div class="next-action" id="win-next-action"></div>
+
       <div class="next-preview" id="win-next-wrap" hidden>
         <div class="np-label">Up next &middot; Level <span id="win-next-num">2</span></div>
         <div class="np-vials" id="win-next-vials" aria-hidden="true"></div>
@@ -262,6 +289,30 @@
       <div class="dr-amount"><span class="ic">&#9670;</span> <span id="dr-amount">25</span></div>
       <div class="hint" id="dr-sub">Daily login bonus</div>
       <button class="btn primary wide" id="dr-claim">Collect</button>
+    </div>
+  </div>
+
+  <!-- ── Goals (daily orders + weekly meter) ─────────────── -->
+  <div id="goals" class="overlay">
+    <div class="sheet card">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <h2>Goals</h2>
+        <button class="btn icon ghost" data-close="goals" aria-label="Close">&#10005;</button>
+      </div>
+      <div class="scroll">
+        <div class="shop-cat">Daily Orders <span class="reroll-note" id="reroll-note"></span></div>
+        <div id="orders-list"></div>
+        <div class="shop-cat">Weekly Activity</div>
+        <div class="weekly-card">
+          <div class="weekly-top">
+            <span id="weekly-text">Play 3 days this week</span>
+            <span id="weekly-count">0/3</span>
+          </div>
+          <div class="weekly-dots" id="weekly-dots"></div>
+          <button class="btn primary wide" id="weekly-claim" hidden>Claim weekly bonus</button>
+        </div>
+      </div>
+      <button class="btn primary wide" data-close="goals">Done</button>
     </div>
   </div>
 

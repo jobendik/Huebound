@@ -4,6 +4,7 @@ import { G } from './game/state';
 import { applySettings } from './ui/settings';
 import { applyCosmetics } from './meta/apply';
 import { rollChallenge } from './meta/economy';
+import { ensureObjectives } from './meta/objectives';
 import { showScreen, updateMenuStars } from './ui/overlays';
 import { maybeShowDailyReward } from './ui/daily';
 import { doResize } from './render/canvas';
@@ -18,6 +19,7 @@ function init(): void {
   applySettings();
   applyCosmetics();
   rollChallenge();
+  ensureObjectives();
   Platform.init();
   // When the SDK is ready, pull cloud progress and refresh the menu.
   Platform.whenReady(() => {

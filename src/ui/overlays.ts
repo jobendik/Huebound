@@ -1,6 +1,8 @@
 import { G } from '../game/state';
 import { Store } from '../store';
 import { LEVEL_COUNT } from '../render/colors';
+import { levelInfo } from '../meta/progression';
+import { ordersRemaining, weeklyClaimable } from '../meta/objectives';
 
 export function showScreen(name: string): void {
   G.screen = name;
@@ -35,6 +37,24 @@ export function updateMenuStars(): void {
     cont.textContent = Store.data.started
       ? `Continue Level ${(Store.data.current ?? 0) + 1}`
       : 'Continue';
+  }
+
+  // Player level strip (identity, §3).
+  const li = levelInfo();
+  const lvlEl = document.getElementById('ps-level');
+  if (lvlEl) lvlEl.textContent = String(li.level);
+  const titleEl = document.getElementById('ps-title');
+  if (titleEl) titleEl.textContent = li.title;
+  const xpFill = document.getElementById('ps-xp-fill');
+  if (xpFill) xpFill.style.width = `${Math.round((li.into / li.span) * 100)}%`;
+
+  // Goals pip — claimable orders / weekly bonus.
+  const pip = document.getElementById('goals-pip');
+  if (pip) {
+    const n = ordersRemaining();
+    if (weeklyClaimable()) { pip.textContent = '!'; pip.removeAttribute('hidden'); }
+    else if (n > 0) { pip.textContent = String(n); pip.removeAttribute('hidden'); }
+    else pip.setAttribute('hidden', '');
   }
 
   // Daily Challenge badge: streak flame, or a tick when already solved today.

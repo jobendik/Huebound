@@ -15,11 +15,15 @@ export const Store = {
       best: {},
       settings: { sound: true, motion: true, symbols: false, haptics: true },
       shards: 0,
+      xp: 0,
       winStreak: 0,
       tutorialDone: false,
       daily: { lastSeenDay: '', loginStreak: 0, bestLoginStreak: 0, lastRewardDay: '' },
       challenge: { day: '', done: false, best: undefined, streak: 0, bestStreak: 0, lastSolvedDay: '' },
       cosmetics: { skin: 'skin-classic', theme: 'theme-cave', owned: ['skin-classic', 'theme-cave'] },
+      objectives: { day: '', orders: [], rerolled: false },
+      weekly: { week: '', days: [], claimed: false },
+      stats: { wins: 0, perfects: 0, tubes: 0, pours: 0 },
     };
   },
 
@@ -45,6 +49,9 @@ export const Store = {
     this.data.daily = Object.assign(d.daily, p.daily ?? {});
     this.data.challenge = Object.assign(d.challenge, p.challenge ?? {});
     this.data.cosmetics = Object.assign(d.cosmetics, p.cosmetics ?? {});
+    this.data.objectives = Object.assign(d.objectives, p.objectives ?? {});
+    this.data.weekly = Object.assign(d.weekly, p.weekly ?? {});
+    this.data.stats = Object.assign(d.stats, p.stats ?? {});
     const owned = new Set([...d.cosmetics.owned, ...(this.data.cosmetics.owned ?? [])]);
     this.data.cosmetics.owned = [...owned];
     this.data.shards = Math.max(0, this.data.shards ?? 0);
@@ -82,6 +89,7 @@ export const Store = {
 
     bump((o.maxUnlocked ?? 0) > d.maxUnlocked); d.maxUnlocked = Math.max(d.maxUnlocked, o.maxUnlocked ?? 0);
     bump((o.shards ?? 0) > (d.shards ?? 0)); d.shards = Math.max(d.shards ?? 0, o.shards ?? 0);
+    bump((o.xp ?? 0) > (d.xp ?? 0)); d.xp = Math.max(d.xp ?? 0, o.xp ?? 0);
     d.started = d.started || !!o.started;
     d.tutorialDone = d.tutorialDone || !!o.tutorialDone;
     if ((o.current ?? 0) > d.current) d.current = o.current ?? d.current;

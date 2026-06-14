@@ -15,8 +15,12 @@ import { showScreen, openOverlay, updateMenuStars } from '../ui/overlays';
 import { toast } from '../ui/toast';
 import { bandsOf } from '../render/draw';
 import {
-  shardsForWin, addShards, dailyBoard, recordChallengeWin, isChallengeDoneToday,
+  shardsForWin, addShards, dailyBoard, recordChallengeWin, isChallengeDoneToday, todayKey,
 } from '../meta/economy';
+import { addXp, xpForWin, levelInfo } from '../meta/progression';
+import {
+  ensureObjectives, progressOrders, markActiveDay, ordersRemaining, weeklyClaimable,
+} from '../meta/objectives';
 import { maybeStartTutorial, isTutorialActive, tutorialOnPour } from './tutorial';
 
 export const FREE_HINTS = 2;
@@ -103,6 +107,8 @@ export function tryPour(s: number, d: number): boolean {
   G.anim = { type: 'pour', s, d, color, count: amt, pre, t0: performance.now(), dur: G.motion ? 500 : 1 };
   AudioEngine.pour();
   Haptics.pour();
+  Store.data.stats.pours = (Store.data.stats.pours ?? 0) + 1;
+  progressOrders('pours', 1);
   updateHUD();
   startLoop();
   return true;
@@ -121,6 +127,8 @@ export function finishPour(): void {
     spawnComplete(a.d);
     AudioEngine.complete();
     Haptics.complete();
+    Store.data.stats.tubes = (Store.data.stats.tubes ?? 0) + 1;
+    progressOrders('tubes', 1);
   } else {
     spawnLand(a.d, a.color);
   }
@@ -232,19 +240,24 @@ function onWin(): void {
 
   // ── Currency, streaks & persistence ─────────────────────
   Store.data.winStreak = (Store.data.winStreak ?? 0) + 1;
+  Store.data.stats.wins = (Store.data.stats.wins ?? 0) + 1;
+  if (stars === 3) Store.data.stats.perfects = (Store.data.stats.perfects ?? 0) + 1;
+  const firstOfDay = !Store.data.weekly.days.includes(todayKey());
   let earned = 0;
   let isBest = false;
+  let firstClear = false;
   let dailyStreak = 0;
 
   if (G.daily) {
     const r = recordChallengeWin(rec);
     earned = r.shards; // includes daily bonus + streak
     dailyStreak = r.streak;
+    firstClear = r.firstToday;
     isBest = !r.firstToday && (Store.data.challenge.best?.moves ?? Infinity) >= G.moves;
   } else {
     const key = String(G.level);
     const prev = Store.data.best[key];
-    const firstClear = !prev;
+    firstClear = !prev;
     if (!prev || G.moves < prev.moves || (G.moves === prev.moves && G.timeMs < (prev.timeMs ?? Infinity))) {
       isBest = !!prev;
       Store.data.best[key] = { moves: G.moves, stars: Math.max(stars, prev ? prev.stars : 0), timeMs: Math.round(G.timeMs) };
@@ -261,6 +274,18 @@ function onWin(): void {
     earned = firstClear ? shardsForWin(stars) : 3; // replays give a small consolation
     addShards(earned);
   }
+
+  // Account XP + objectives (§3, §5). Daily Orders progress on every win.
+  ensureObjectives();
+  const xpBefore = levelInfo();
+  const xpGain = xpForWin(stars, firstClear, firstOfDay);
+  const xpRes = addXp(xpGain);
+  markActiveDay();
+  const completed = [
+    ...progressOrders('win', 1),
+    ...(stars === 3 ? progressOrders('perfect', 1) : []),
+    ...(G.daily ? progressOrders('daily', 1) : []),
+  ];
   Store.save();
 
   lastWinShards = earned;
@@ -309,6 +334,52 @@ function onWin(): void {
     }
   }
 
+  // Medals (§14.1) — instant dopamine for notable performances.
+  const medals: string[] = [];
+  if (G.moves <= G.par) medals.push('✦ Flawless');
+  else if (stars === 3) medals.push('★ Three Star');
+  if (G.hintsLeft === FREE_HINTS) medals.push('◆ No Hints');
+  if (G.timeMs > 0 && G.timeMs < 30000) medals.push('⚡ Speedy');
+  if (Store.data.winStreak >= 3) medals.push(`🔥 ${Store.data.winStreak} Streak`);
+  const medalEl = document.getElementById('win-medals');
+  if (medalEl) {
+    medalEl.innerHTML = medals.slice(0, 3).map((m) => `<span class="medal">${m}</span>`).join('');
+  }
+
+  // XP / level progress bar (§4.3) — animate the fill, flag level-ups.
+  set('win-xp-gain', `+${xpGain} XP`);
+  const after = levelInfo();
+  set('win-xp-lvl', `Lv ${after.level}`);
+  const fill = document.getElementById('win-xp-fill');
+  if (fill) {
+    const startPct = xpRes.leveledUp ? 100 : Math.round((xpBefore.into / xpBefore.span) * 100);
+    fill.style.transition = 'none';
+    fill.style.width = `${Math.round((xpBefore.into / xpBefore.span) * 100)}%`;
+    const endPct = Math.round((after.into / after.span) * 100);
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      fill.style.transition = 'width .7s cubic-bezier(0.16,1,0.3,1)';
+      fill.style.width = `${xpRes.leveledUp ? startPct : endPct}%`;
+      if (xpRes.leveledUp) setTimeout(() => { fill.style.width = `${endPct}%`; }, 720);
+    }));
+    if (xpRes.leveledUp) setTimeout(() => { toast(`Level ${after.level} — ${after.title}!`); AudioEngine.best(); Haptics.complete(); }, 900);
+  }
+
+  // Daily Order progress lines (§4.3).
+  const ordersEl = document.getElementById('win-orders');
+  if (ordersEl) {
+    ordersEl.innerHTML = Store.data.objectives.orders.map((o) => {
+      const just = completed.some((c) => c.text === o.text);
+      const pct = Math.min(100, (o.progress / o.target) * 100);
+      return `<div class="wo-row${o.done ? ' done' : ''}${just ? ' flash' : ''}">` +
+        `<span class="wo-text">${o.done ? '✓ ' : ''}${o.text}</span>` +
+        `<span class="wo-prog">${Math.min(o.progress, o.target)}/${o.target}</span>` +
+        `<i class="wo-bar" style="width:${pct}%"></i></div>`;
+    }).join('');
+  }
+  if (completed.length) {
+    setTimeout(() => toast(`Order complete! +${completed.reduce((s, c) => s + c.reward, 0)} shards`), 1400);
+  }
+
   // Double-shards rewarded button (only when ads are actually available).
   const dbl = document.getElementById('win-double');
   if (dbl) {
@@ -341,6 +412,15 @@ function onWin(): void {
       ? 'Daily Solved!'
       : (lastLevel ? 'All Crystals Sorted!' : 'Sorted!');
   }
+
+  // Next best action (§4.5) — always give the player a reason for one more.
+  let nextMsg = '';
+  if (weeklyClaimable()) nextMsg = '🎁 Weekly bonus ready — claim it in Goals!';
+  else if (ordersRemaining() > 0) nextMsg = `${ordersRemaining()} Daily Order${ordersRemaining() > 1 ? 's' : ''} left — one more round!`;
+  else if (!G.daily && !isChallengeDoneToday()) nextMsg = '◆ Try the Daily Challenge for bonus shards!';
+  else if (!lastLevel) nextMsg = 'You\'re on a roll — keep the streak alive!';
+  const naEl = document.getElementById('win-next-action');
+  if (naEl) naEl.textContent = nextMsg;
 
   // Light interstitial cadence between levels (gated by SDK availability).
   if (!G.daily && (G.level + 1) % 5 === 0) Platform.requestMidgameAdIfAvailable();
