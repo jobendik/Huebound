@@ -131,17 +131,22 @@ export function isSolvable(start: number[][], cap: number, budget = 60000): bool
 
 export function levelParams(idx: number): { colors: number; empty: number; capacity: number } {
   const n = idx + 1;
-  let colors: number, empty = 2;
-  if (n <= 8) colors = 3;
-  else if (n <= 20) colors = 4;
-  else if (n <= 35) colors = 5;
-  else if (n <= 55) colors = 6;
-  else if (n <= 75) colors = 7;
-  else if (n <= 95) colors = 8;
-  else if (n <= 115) colors = 9;
-  else if (n <= 130) colors = 10;
-  else if (n <= 142) colors = 11;
-  else colors = 12;
+  let colors: number, empty: number;
+  // 2-empty tiers = manageable; 1-empty tiers = dramatically harder (no spare tube).
+  if (n <= 3)        { colors = 3;  empty = 2; }
+  else if (n <= 10)  { colors = 4;  empty = 2; }
+  else if (n <= 20)  { colors = 5;  empty = 2; }
+  else if (n <= 32)  { colors = 6;  empty = 2; }
+  else if (n <= 45)  { colors = 7;  empty = 2; }
+  else if (n <= 58)  { colors = 8;  empty = 2; }
+  else if (n <= 70)  { colors = 8;  empty = 1; }  // challenge tier begins
+  else if (n <= 82)  { colors = 9;  empty = 1; }
+  else if (n <= 95)  { colors = 10; empty = 1; }
+  else if (n <= 108) { colors = 10; empty = 2; }  // brief breather
+  else if (n <= 120) { colors = 11; empty = 1; }
+  else if (n <= 132) { colors = 11; empty = 2; }
+  else if (n <= 142) { colors = 12; empty = 1; }
+  else               { colors = 12; empty = 1; }
   return { colors, empty, capacity: 4 };
 }
 
@@ -178,6 +183,8 @@ function isTrivial(tubes: number[][], cap: number): boolean {
     for (const c of set) colorTubes.set(c, (colorTubes.get(c) ?? 0) + 1);
   }
   for (const [, count] of colorTubes) if (count < 2) return true;
+  // Reject boards that need fewer than 3 merge operations — too easy.
+  if (parFor(tubes) < 3) return true;
   return false;
 }
 

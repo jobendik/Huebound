@@ -1,19 +1,19 @@
 export const LEVEL_COUNT = 150;
 
-// Jewel-tone palette — each color represents a distinct gemstone.
+// Vivid jewel-tone palette — saturated gem colors that pop on a dark background.
 export const PALETTE: readonly string[] = [
-  '#e53e3e', // Ruby
-  '#dd6b20', // Fire Opal
-  '#d69e2e', // Amber
-  '#68d391', // Peridot
-  '#38a169', // Emerald
-  '#319795', // Aquamarine
-  '#3182ce', // Sapphire
-  '#5a67d8', // Tanzanite
-  '#805ad5', // Amethyst
-  '#b83280', // Rhodolite
-  '#4fd1c5', // Blue Topaz
-  '#c05621', // Hessonite
+  '#ff3333', // Ruby
+  '#ff7722', // Fire Opal
+  '#ffcc00', // Topaz
+  '#44ee77', // Peridot
+  '#00cc55', // Emerald
+  '#00ccbb', // Aquamarine
+  '#2288ff', // Sapphire
+  '#6655ff', // Tanzanite
+  '#aa44ff', // Amethyst
+  '#ff44aa', // Rose Quartz
+  '#22ddee', // Blue Topaz
+  '#ff8833', // Citrine
 ];
 
 export function hexToRgb(h: string): { r: number; g: number; b: number } {

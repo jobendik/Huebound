@@ -40,20 +40,20 @@ html, body {
 #app {
   position: absolute; inset: 0; overflow: hidden;
   background:
-    radial-gradient(110% 70% at 12% -8%,  rgba(100, 40, 220, 0.50), transparent 60%),
-    radial-gradient(100% 80% at 88% 5%,   rgba(20, 200, 200, 0.14), transparent 55%),
-    radial-gradient(120% 100% at 50% 120%, rgba(180, 40, 240, 0.14), transparent 55%),
-    linear-gradient(160deg, var(--bg1), var(--bg0) 70%);
+    radial-gradient(120% 80% at 10% -10%,  rgba(110, 40, 240, 0.55), transparent 60%),
+    radial-gradient(110% 90% at 90% 8%,    rgba(20, 210, 200, 0.18), transparent 55%),
+    radial-gradient(130% 110% at 50% 115%, rgba(180, 30, 250, 0.18), transparent 55%),
+    linear-gradient(160deg, #0e062a, var(--bg0) 70%);
 }
 
-/* Crystal cave ambient glow — slower, more geometric than liquid aurora */
+/* Crystal cave ambient glow */
 #aurora {
   position: absolute; inset: -20%; pointer-events: none;
-  opacity: 0.85; filter: blur(24px);
+  opacity: 0.90; filter: blur(22px);
   background:
-    radial-gradient(38% 38% at 28% 32%, rgba(120, 80, 255, 0.32), transparent 70%),
-    radial-gradient(42% 42% at 72% 62%, rgba(30, 200, 190, 0.18), transparent 70%),
-    radial-gradient(30% 30% at 55% 85%, rgba(200, 50, 255, 0.14), transparent 70%);
+    radial-gradient(36% 36% at 26% 30%, rgba(130, 80, 255, 0.38), transparent 70%),
+    radial-gradient(44% 44% at 74% 64%, rgba(30, 210, 195, 0.22), transparent 70%),
+    radial-gradient(28% 28% at 54% 88%, rgba(210, 44, 255, 0.16), transparent 70%);
   animation: cavePulse 28s ease-in-out infinite alternate;
 }
 @keyframes cavePulse {
@@ -63,6 +63,13 @@ html, body {
 }
 @media (prefers-reduced-motion: reduce) { #aurora { animation: none; } }
 body.calm #aurora { animation: none; }
+
+/* ── Crystal cave wall decorations (CSS geometry) ───────── */
+.cave-crystals {
+  position: absolute; pointer-events: none; z-index: 0; opacity: 0.7;
+}
+.cave-crystals.bl { bottom: 0; left: 0; width: 130px; height: 210px; }
+.cave-crystals.tr { top: 0; right: 0; width: 120px; height: 190px; }
 
 /* ── Screens ─────────────────────────────────────────────── */
 .screen {
@@ -132,9 +139,17 @@ body.calm #aurora { animation: none; }
 .title {
   font-size: clamp(40px, 12vw, 68px); font-weight: 800; margin: 0;
   line-height: .92; letter-spacing: .5px;
-  background: linear-gradient(125deg, #fff 0%, #c8b0ff 38%, var(--accent2) 75%);
+  background: linear-gradient(125deg, #fff 0%, #d0baff 30%, var(--accent2) 68%, #fff 100%);
+  background-size: 200% auto;
   -webkit-background-clip: text; background-clip: text; color: transparent;
+  animation: titleShimmer 6s linear infinite;
 }
+@keyframes titleShimmer {
+  0%   { background-position: 0% center; }
+  100% { background-position: 200% center; }
+}
+@media (prefers-reduced-motion: reduce) { .title { animation: none; } }
+body.calm .title { animation: none; }
 .tag { color: var(--ink-soft); font-size: 15px; margin-top: 6px; font-weight: 600; letter-spacing: .4px; }
 
 .menu-actions { display: flex; flex-direction: column; gap: 12px; width: min(340px, 82vw); }

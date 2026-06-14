@@ -61,48 +61,73 @@ function drawSymbol(colorIdx: number, cx: number, cy: number, r: number): void {
   ctx.restore();
 }
 
-// Crystal band — faceted gemstone appearance instead of smooth liquid.
+// Gem-quality crystal facet overlay applied on top of a base-color fill.
+// Simulates faceted light: radial inner highlight, upper-left bright zone,
+// right-side shadow, bottom shadow, and a bright crystal-cut edge at top.
 function drawCrystalBand(
   innerX: number, top: number, innerW: number, hpx: number,
 ): void {
-  // Diagonal facet gradient — top-left bright, bottom-right dark.
-  const facetGrad = ctx.createLinearGradient(innerX, top, innerX + innerW, top + hpx);
-  facetGrad.addColorStop(0, 'rgba(255,255,255,0.30)');
-  facetGrad.addColorStop(0.22, 'rgba(255,255,255,0.12)');
-  facetGrad.addColorStop(0.58, 'rgba(0,0,0,0.04)');
-  facetGrad.addColorStop(1, 'rgba(0,0,0,0.26)');
-  ctx.fillStyle = facetGrad;
+  if (hpx < 0.5) return;
+
+  // Radial internal glow — light "inside" the gem
+  const glowX = innerX + innerW * 0.35;
+  const glowY = top + hpx * 0.30;
+  const glowR = Math.max(innerW, hpx) * 0.90;
+  const innerGlow = ctx.createRadialGradient(glowX, glowY, 0, glowX, glowY, glowR);
+  innerGlow.addColorStop(0,    'rgba(255,255,255,0.36)');
+  innerGlow.addColorStop(0.28, 'rgba(255,255,255,0.14)');
+  innerGlow.addColorStop(0.60, 'rgba(0,0,0,0)');
+  innerGlow.addColorStop(1,    'rgba(0,0,0,0.30)');
+  ctx.fillStyle = innerGlow;
   ctx.fillRect(innerX, top, innerW, hpx + 0.6);
 
-  // Left-facet highlight strip.
-  const lw = innerW * 0.13;
-  const leftGrad = ctx.createLinearGradient(innerX, 0, innerX + lw, 0);
-  leftGrad.addColorStop(0, 'rgba(255,255,255,0.26)');
-  leftGrad.addColorStop(1, 'rgba(255,255,255,0)');
-  ctx.fillStyle = leftGrad;
-  ctx.fillRect(innerX, top, lw, hpx);
+  // Upper-left bright facet
+  const facetG = ctx.createLinearGradient(innerX, top, innerX + innerW * 0.58, top + hpx * 0.52);
+  facetG.addColorStop(0, 'rgba(255,255,255,0.42)');
+  facetG.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = facetG;
+  ctx.fillRect(innerX, top, innerW, hpx);
 
-  // Bright crystal-edge highlight at top of each band.
-  const edgeH = Math.min(2.5, hpx * 0.22);
-  const edgeGrad = ctx.createLinearGradient(innerX, 0, innerX + innerW, 0);
-  edgeGrad.addColorStop(0, 'rgba(255,255,255,0.65)');
-  edgeGrad.addColorStop(0.55, 'rgba(255,255,255,0.38)');
-  edgeGrad.addColorStop(1, 'rgba(255,255,255,0.10)');
-  ctx.fillStyle = edgeGrad;
+  // Right-side dark shadow facet
+  const rightG = ctx.createLinearGradient(innerX + innerW * 0.56, 0, innerX + innerW, 0);
+  rightG.addColorStop(0, 'rgba(0,0,0,0)');
+  rightG.addColorStop(1, 'rgba(0,0,0,0.34)');
+  ctx.fillStyle = rightG;
+  ctx.fillRect(innerX, top, innerW, hpx);
+
+  // Bottom shadow
+  if (hpx > 5) {
+    const bsh = Math.min(5, hpx * 0.22);
+    const botG = ctx.createLinearGradient(0, top + hpx - bsh, 0, top + hpx + 0.6);
+    botG.addColorStop(0, 'rgba(0,0,0,0)');
+    botG.addColorStop(1, 'rgba(0,0,0,0.28)');
+    ctx.fillStyle = botG;
+    ctx.fillRect(innerX, top + hpx - bsh, innerW, bsh + 0.6);
+  }
+
+  // Bright crystal-cut edge — the sharpest visual marker of each gem layer
+  const edgeH = Math.min(3.5, hpx * 0.26);
+  const edgeG = ctx.createLinearGradient(innerX, 0, innerX + innerW, 0);
+  edgeG.addColorStop(0,    'rgba(255,255,255,0.88)');
+  edgeG.addColorStop(0.42, 'rgba(255,255,255,0.65)');
+  edgeG.addColorStop(1,    'rgba(255,255,255,0.22)');
+  ctx.fillStyle = edgeG;
   ctx.fillRect(innerX, top, innerW, edgeH);
 
-  // Subtle diagonal striation lines (crystal planes).
-  if (hpx > 10) {
-    ctx.strokeStyle = 'rgba(255,255,255,0.07)';
-    ctx.lineWidth = 0.6;
-    const numLines = Math.min(3, Math.floor(hpx / 12));
-    for (let j = 1; j <= numLines; j++) {
-      const ly = top + (j / (numLines + 1)) * hpx;
+  // Diagonal striation lines (crystal internal planes)
+  if (hpx > 14) {
+    ctx.save();
+    ctx.strokeStyle = 'rgba(255,255,255,0.09)';
+    ctx.lineWidth = 0.7;
+    const n = Math.min(3, Math.floor(hpx / 14));
+    for (let j = 1; j <= n; j++) {
+      const ly = top + (j / (n + 1)) * hpx;
       ctx.beginPath();
-      ctx.moveTo(innerX, ly + 1);
-      ctx.lineTo(innerX + innerW, ly);
+      ctx.moveTo(innerX + 2, ly + 2);
+      ctx.lineTo(innerX + innerW - 2, ly);
       ctx.stroke();
     }
+    ctx.restore();
   }
 }
 
@@ -116,7 +141,7 @@ interface DrawVialOpts {
   pulse?: number;
 }
 
-export function drawVial(rect: VialRect, bands: Band[], opts: DrawVialOpts = {}): void {
+export function drawVial(rect: VialRect, bands: Band[], opts: DrawVialOpts = {}, cap = 4): void {
   const { x: bx, y, w, h, unitH, innerPad } = rect;
   const x = bx + (opts.dx ?? 0);
   const lift = opts.lift ?? 0;
@@ -129,43 +154,55 @@ export function drawVial(rect: VialRect, bands: Band[], opts: DrawVialOpts = {})
 
   ctx.save();
 
-  // Glass body fill.
+  // Glass body — purple-tinted so the tube is clearly visible.
   roundRectPath(ctx, x, bodyY, w, bodyH, rTop, rBot);
-  ctx.fillStyle = 'rgba(255,255,255,0.04)';
+  const glassG = ctx.createLinearGradient(x, 0, x + w, 0);
+  glassG.addColorStop(0,   'rgba(160,130,255,0.11)');
+  glassG.addColorStop(0.5, 'rgba(255,255,255,0.07)');
+  glassG.addColorStop(1,   'rgba(100,80,200,0.13)');
+  ctx.fillStyle = glassG;
   ctx.fill();
 
-  // Crystal layers — clipped to inner tube.
+  // Clip inner content to the tube interior.
   ctx.save();
   roundRectPath(ctx, innerX, bodyY + innerPad * 0.4, innerW, bodyH - innerPad * 0.8, rTop * 0.7, rBot * 0.92);
   ctx.clip();
+
+  const totalUnits = bands.reduce((s, b) => s + b.units, 0);
+
+  // Empty tube interior — dark depth fill above the crystals.
+  const emptyUnits = cap - totalUnits;
+  if (emptyUnits > 0.1) {
+    const emptyH = emptyUnits * unitH;
+    const emptyTopY = innerBottom - totalUnits * unitH - emptyH;
+    const depthG = ctx.createLinearGradient(innerX, emptyTopY, innerX + innerW, emptyTopY + emptyH);
+    depthG.addColorStop(0, 'rgba(4,2,16,0.80)');
+    depthG.addColorStop(1, 'rgba(10,5,28,0.60)');
+    ctx.fillStyle = depthG;
+    ctx.fillRect(innerX, emptyTopY, innerW, emptyH + 1);
+  }
+
+  // Crystal bands — base color then gem-facet overlay.
   let acc = 0;
-  for (let bi = 0; bi < bands.length; bi++) {
-    const band = bands[bi];
+  for (const band of bands) {
     if (band.units <= 0) continue;
     const hpx = band.units * unitH;
     const top = innerBottom - (acc + band.units) * unitH;
-    const col = PALETTE[band.color] ?? '#888';
-
-    // Base solid fill.
-    ctx.fillStyle = col;
+    ctx.fillStyle = PALETTE[band.color] ?? '#888';
     ctx.fillRect(innerX, top, innerW, hpx + 0.6);
-
-    // Crystal facet overlay.
     drawCrystalBand(innerX, top, innerW, hpx);
-
     acc += band.units;
   }
 
-  // Separator lines between layers — sharp crystal cuts.
-  const totalUnits = acc;
-  ctx.strokeStyle = 'rgba(0,0,0,0.22)';
-  ctx.lineWidth = 1;
-  for (let u = 1; u < totalUnits - 0.001; u++) {
+  // Crystal-cut separator lines: dark incision + bright reflection edge below it.
+  for (let u = 1; u < acc - 0.001; u++) {
     const yy = innerBottom - u * unitH;
-    ctx.beginPath();
-    ctx.moveTo(innerX, yy);
-    ctx.lineTo(innerX + innerW, yy);
-    ctx.stroke();
+    ctx.strokeStyle = 'rgba(0,0,0,0.40)';
+    ctx.lineWidth = 1.2;
+    ctx.beginPath(); ctx.moveTo(innerX, yy); ctx.lineTo(innerX + innerW, yy); ctx.stroke();
+    ctx.strokeStyle = 'rgba(255,255,255,0.22)';
+    ctx.lineWidth = 0.6;
+    ctx.beginPath(); ctx.moveTo(innerX, yy + 1.3); ctx.lineTo(innerX + innerW, yy + 1.3); ctx.stroke();
   }
 
   // Accessibility symbols.
@@ -176,69 +213,73 @@ export function drawVial(rect: VialRect, bands: Band[], opts: DrawVialOpts = {})
       while (rem >= 0.6) {
         const cyc = innerBottom - (acc + 0.5) * unitH;
         drawSymbol(band.color, innerX + innerW / 2, cyc, unitH * 0.34);
-        acc += 1;
-        rem -= 1;
+        acc += 1; rem -= 1;
       }
       if (rem > 0) acc += rem;
     }
   }
+
   ctx.restore();
 
-  // Glass gloss streak.
+  // Glass gloss streak (left edge highlight).
   ctx.save();
   roundRectPath(ctx, x, bodyY, w, bodyH, rTop, rBot);
   ctx.clip();
   const gg = ctx.createLinearGradient(x, 0, x + w, 0);
-  gg.addColorStop(0, 'rgba(255,255,255,0.20)');
-  gg.addColorStop(0.16, 'rgba(255,255,255,0.05)');
-  gg.addColorStop(0.5, 'rgba(255,255,255,0)');
-  gg.addColorStop(0.86, 'rgba(255,255,255,0.02)');
-  gg.addColorStop(1, 'rgba(255,255,255,0.11)');
+  gg.addColorStop(0,    'rgba(255,255,255,0.28)');
+  gg.addColorStop(0.12, 'rgba(255,255,255,0.09)');
+  gg.addColorStop(0.5,  'rgba(255,255,255,0)');
+  gg.addColorStop(0.88, 'rgba(255,255,255,0.03)');
+  gg.addColorStop(1,    'rgba(255,255,255,0.16)');
   ctx.fillStyle = gg;
   ctx.fillRect(x, bodyY, w, bodyH);
   ctx.restore();
 
-  // Outline / glow.
-  let stroke = 'rgba(255,255,255,0.30)', lw = Math.max(1.5, w * 0.035), glow = 0, glowCol = '';
-  if (opts.completed) { stroke = rgba('#ffd35c', 0.95); glow = 12; glowCol = 'rgba(255,211,92,0.8)'; }
-  if (opts.hintTo) { stroke = rgba('#5fe1a0', 0.95); glow = 16; glowCol = 'rgba(95,225,160,0.9)'; }
-  if (opts.hintFrom) { stroke = rgba('#3fd3c8', 0.95); glow = 16; glowCol = 'rgba(63,211,200,0.9)'; }
-  if (opts.selected) { stroke = 'rgba(255,255,255,0.95)'; glow = 18; glowCol = 'rgba(159,143,255,0.95)'; }
+  // Outline / glow — completed vials glow with their own gem color.
+  let stroke = 'rgba(255,255,255,0.30)';
+  let lw = Math.max(1.5, w * 0.040);
+  let glow = 0, glowCol = '';
+  if (opts.completed) {
+    const gemCol = PALETTE[bands[0]?.color ?? 0] ?? '#ffd35c';
+    stroke = rgba(gemCol, 0.95); glow = 20; glowCol = rgba(gemCol, 0.65);
+  }
+  if (opts.hintTo)   { stroke = rgba('#5fe1a0', 0.95); glow = 18; glowCol = 'rgba(95,225,160,0.85)'; }
+  if (opts.hintFrom) { stroke = rgba('#3fd3c8', 0.95); glow = 18; glowCol = 'rgba(63,211,200,0.85)'; }
+  if (opts.selected) { stroke = 'rgba(255,255,255,0.96)'; glow = 24; glowCol = 'rgba(160,130,255,0.95)'; }
   if (opts.pulse) glow += opts.pulse;
 
   roundRectPath(ctx, x, bodyY, w, bodyH, rTop, rBot);
-  if (glow) { ctx.shadowColor = glowCol || 'rgba(159,143,255,0.9)'; ctx.shadowBlur = glow; }
-  ctx.lineWidth = lw;
-  ctx.strokeStyle = stroke;
-  ctx.stroke();
+  if (glow) { ctx.shadowColor = glowCol || 'rgba(160,130,255,0.9)'; ctx.shadowBlur = glow; }
+  ctx.lineWidth = lw; ctx.strokeStyle = stroke; ctx.stroke();
   ctx.shadowBlur = 0;
 
   // Rim (neck of tube).
   ctx.beginPath();
   ctx.ellipse(x + w / 2, bodyY, w / 2 - 1, rimH * 0.55, 0, 0, Math.PI * 2);
-  ctx.fillStyle = 'rgba(8,4,20,0.55)';
+  ctx.fillStyle = 'rgba(6,3,18,0.62)';
   ctx.fill();
-  ctx.lineWidth = Math.max(1.4, w * 0.03);
-  ctx.strokeStyle = opts.selected ? 'rgba(255,255,255,0.85)' : 'rgba(255,255,255,0.38)';
+  ctx.lineWidth = Math.max(1.4, w * 0.036);
+  ctx.strokeStyle = opts.selected ? 'rgba(255,255,255,0.90)' : 'rgba(255,255,255,0.44)';
   ctx.stroke();
 
-  // Checkmark when vial is complete.
+  // Completed checkmark.
   if (opts.completed) {
     const ccx = x + w / 2, ccy = (y - lift) + h * 0.52;
-    ctx.strokeStyle = 'rgba(255,255,255,0.92)';
-    ctx.lineWidth = Math.max(2, w * 0.07);
+    ctx.strokeStyle = 'rgba(255,255,255,0.96)';
+    ctx.lineWidth = Math.max(2, w * 0.08);
     ctx.lineCap = 'round';
     ctx.beginPath();
     ctx.moveTo(ccx - w * 0.16, ccy);
-    ctx.lineTo(ccx - w * 0.03, ccy + w * 0.13);
-    ctx.lineTo(ccx + w * 0.2, ccy - w * 0.16);
+    ctx.lineTo(ccx - w * 0.03, ccy + w * 0.14);
+    ctx.lineTo(ccx + w * 0.20, ccy - w * 0.17);
     ctx.stroke();
     ctx.lineCap = 'butt';
   }
+
   ctx.restore();
 }
 
-// Crystal shard pour — individual faceted gems fall along a bezier arc.
+// Crystal shard pour — diamond fragments travel along a bezier arc.
 export function drawCrystalStream(a: AnimState, ap: AnimProgress): void {
   const { rects, vw } = G.layout!;
   const sr = rects[a.s], dr = rects[a.d];
@@ -256,25 +297,22 @@ export function drawCrystalStream(a: AnimState, ap: AnimProgress): void {
   const ctrlY = Math.min(spoutY, dstTopY) - vw * 0.18;
 
   const col = PALETTE[a.color] ?? '#fff';
-  const numShards = 7;
+  const numShards = 8;
 
   for (let k = 0; k < numShards; k++) {
     const t = clamp01(ap.tfrac - k * 0.07);
     if (t <= 0) continue;
 
-    // Bezier position for this shard.
     const bx = (1 - t) * (1 - t) * spoutX + 2 * (1 - t) * t * ctrlX + t * t * mouthX;
     const by = (1 - t) * (1 - t) * spoutY + 2 * (1 - t) * t * ctrlY + t * t * dstTopY;
-
-    const shardSize = vw * (0.075 + (numShards - k) * 0.008);
+    const shardSize = vw * (0.08 + (numShards - k) * 0.007);
     const rot = t * Math.PI * 3 + k * 1.15;
 
     ctx.save();
     ctx.translate(bx, by);
     ctx.rotate(rot);
-    ctx.globalAlpha = 0.90 - k * 0.09;
+    ctx.globalAlpha = 0.92 - k * 0.08;
 
-    // Diamond shard body.
     ctx.fillStyle = col;
     ctx.beginPath();
     ctx.moveTo(0, -shardSize);
@@ -284,8 +322,8 @@ export function drawCrystalStream(a: AnimState, ap: AnimProgress): void {
     ctx.closePath();
     ctx.fill();
 
-    // Top-left facet highlight.
-    ctx.fillStyle = 'rgba(255,255,255,0.45)';
+    // Facet highlight
+    ctx.fillStyle = 'rgba(255,255,255,0.48)';
     ctx.beginPath();
     ctx.moveTo(0, -shardSize);
     ctx.lineTo(shardSize * 0.55, 0);
@@ -316,7 +354,7 @@ export function draw(now?: number): void {
     ap = { p, tfrac: easeInOut(transfer), liftEnv };
   }
 
-  const bob = G.selected >= 0 ? Math.sin(now * 0.006) * 2 + 6 : 0;
+  const bob = G.selected >= 0 ? Math.sin(now * 0.006) * 2 + 7 : 0;
   let hintPulse = 0;
   if (G.hintMove) {
     hintPulse = 8 + Math.sin(now * 0.008) * 6;
@@ -360,7 +398,7 @@ export function draw(now?: number): void {
       if (i === G.hintMove.s) { opts.hintFrom = true; opts.pulse = hintPulse; }
       if (i === G.hintMove.d) { opts.hintTo = true; opts.pulse = hintPulse; }
     }
-    drawVial(r, bands, opts);
+    drawVial(r, bands, opts, cap);
   }
 
   if (a && ap && ap.p > 0.26 && ap.p < 0.86) drawCrystalStream(a, ap);
