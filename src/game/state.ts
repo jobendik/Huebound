@@ -28,4 +28,6 @@ export const G: GameState = {
   settleT: 0,
   boardW: 0,
   boardH: 0,
+  daily: false,
+  hintsLeft: 2,
 };

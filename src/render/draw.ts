@@ -1,5 +1,5 @@
 import { G } from '../game/state';
-import { PALETTE, rgba } from './colors';
+import { pal, glassStops, rgba } from './colors';
 import { ctx } from './canvas';
 import { computeLayout } from './layout';
 import type { AnimState, AnimProgress, Band, VialRect } from '../types';
@@ -201,12 +201,13 @@ export function drawVial(rect: VialRect, bands: Band[], opts: DrawVialOpts = {},
     ctx.translate(-pcx, -pcy);
   }
 
-  // Glass body — purple-tinted so the tube is clearly visible.
+  // Glass body — tint comes from the active skin so the tube is clearly visible.
   roundRectPath(ctx, x, bodyY, w, bodyH, rTop, rBot);
+  const gs = glassStops();
   const glassG = ctx.createLinearGradient(x, 0, x + w, 0);
-  glassG.addColorStop(0,   'rgba(160,130,255,0.11)');
-  glassG.addColorStop(0.5, 'rgba(255,255,255,0.07)');
-  glassG.addColorStop(1,   'rgba(100,80,200,0.13)');
+  glassG.addColorStop(0,   gs[0]);
+  glassG.addColorStop(0.5, gs[1]);
+  glassG.addColorStop(1,   gs[2]);
   ctx.fillStyle = glassG;
   ctx.fill();
 
@@ -235,7 +236,7 @@ export function drawVial(rect: VialRect, bands: Band[], opts: DrawVialOpts = {},
     if (band.units <= 0) continue;
     const hpx = band.units * unitH;
     const top = innerBottom - (acc + band.units) * unitH;
-    ctx.fillStyle = PALETTE[band.color] ?? '#888';
+    ctx.fillStyle = pal()[band.color] ?? '#888';
     ctx.fillRect(innerX, top, innerW, hpx + 0.6);
     drawCrystalBand(innerX, top, innerW, hpx);
     acc += band.units;
@@ -287,7 +288,7 @@ export function drawVial(rect: VialRect, bands: Band[], opts: DrawVialOpts = {},
   let lw = Math.max(1.5, w * 0.040);
   let glow = 0, glowCol = '';
   if (opts.completed) {
-    const gemCol = PALETTE[bands[0]?.color ?? 0] ?? '#ffd35c';
+    const gemCol = pal()[bands[0]?.color ?? 0] ?? '#ffd35c';
     stroke = rgba(gemCol, 0.95); glow = 20; glowCol = rgba(gemCol, 0.65);
   }
   if (opts.hintTo)   { stroke = rgba('#5fe1a0', 0.95); glow = 18; glowCol = 'rgba(95,225,160,0.85)'; }
@@ -367,7 +368,7 @@ export function drawCrystalStream(a: AnimState, ap: AnimProgress, tf: PourTf): v
   const ctrlX = spoutX + (mouthX - spoutX) * 0.35;
   const ctrlY = Math.min(spoutY, dstTopY) - vw * 0.12;
 
-  const col = PALETTE[a.color] ?? '#fff';
+  const col = pal()[a.color] ?? '#fff';
   const numShards = 9;
 
   for (let k = 0; k < numShards; k++) {

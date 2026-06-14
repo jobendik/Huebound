@@ -5,12 +5,20 @@ import { Store } from '../store';
 import { Platform } from '../platform';
 import { LEVEL_COUNT } from '../render/colors';
 import { pourAmount, topColor, isSolved } from '../core';
-import { loadLevel, restartLevel, tryPour, undo, doHint, pauseGame, resumeFromPause } from '../game/flow';
+import {
+  loadLevel, loadDailyChallenge, restartLevel, tryPour, undo, doHint,
+  pauseGame, resumeFromPause, doubleWinShards, grantHints,
+} from '../game/flow';
+import { tutorialOnSelect } from '../game/tutorial';
 import { startTiming, stopTiming } from '../game/timer';
 import { doResize } from '../render/canvas';
 import { startLoop, markDirty } from '../render/loop';
 import { showScreen, openOverlay, closeOverlay, updateMenuStars } from './overlays';
 import { applySettings } from './settings';
+import { updateHUD } from './hud';
+import { buildShop } from './shop';
+import { claimDailyAndClose } from './daily';
+import { showRewardPrompt } from './rewardPrompt';
 import { toast } from './toast';
 
 export function buildLevelGrid(): void {
@@ -63,6 +71,21 @@ function shakeTube(i: number): void {
   startLoop();
 }
 
+// Hint with a small free allowance, then an opt-in rewarded ad for more.
+function handleHint(): void {
+  if (G.locked) return;
+  if (G.hintsLeft > 0) {
+    if (doHint()) { G.hintsLeft = Math.max(0, G.hintsLeft - 1); updateHUD(); }
+    return;
+  }
+  showRewardPrompt({
+    title: 'Out of hints',
+    msg: 'Watch a short ad for 3 more hints?',
+    onReward: () => { grantHints(3); if (doHint()) { G.hintsLeft = Math.max(0, G.hintsLeft - 1); updateHUD(); } },
+    fallback: () => { doHint(); }, // no ads available — don't punish the player
+  });
+}
+
 function handleTap(px: number, py: number): void {
   if (G.screen !== 'play' || G.locked) return;
   if (document.querySelector('.overlay.active')) return;
@@ -106,6 +129,7 @@ export function initUI(): void {
     AudioEngine.unlock();
     const p = canvasPoint(ev);
     handleTap(p.x, p.y);
+    tutorialOnSelect();
   }, { passive: false });
   cv.addEventListener('contextmenu', (e) => e.preventDefault());
 
@@ -132,7 +156,7 @@ export function initUI(): void {
       return;
     }
     if (ev.key === 'u' || ev.key === 'U') undo();
-    else if (ev.key === 'h' || ev.key === 'H') doHint();
+    else if (ev.key === 'h' || ev.key === 'H') handleHint();
     else if (ev.key === 'r' || ev.key === 'R') restartLevel();
   }, { passive: true });
 
@@ -143,8 +167,14 @@ export function initUI(): void {
   document.getElementById('btn-continue')?.addEventListener('click', () => {
     AudioEngine.unlock(); AudioEngine.button(); loadLevel(Store.data.current ?? 0);
   });
+  document.getElementById('btn-daily')?.addEventListener('click', () => {
+    AudioEngine.unlock(); AudioEngine.button(); loadDailyChallenge();
+  });
   document.getElementById('btn-levels')?.addEventListener('click', () => {
     AudioEngine.unlock(); AudioEngine.button(); buildLevelGrid(); openOverlay('levels');
+  });
+  document.getElementById('btn-shop')?.addEventListener('click', () => {
+    AudioEngine.unlock(); AudioEngine.button(); buildShop(); openOverlay('shop');
   });
   document.getElementById('btn-howto')?.addEventListener('click', () => {
     AudioEngine.button(); openOverlay('howto');
@@ -164,7 +194,7 @@ export function initUI(): void {
   // ── In-game HUD ────────────────────────────────────────
   document.getElementById('btn-pause')?.addEventListener('click', () => { AudioEngine.button(); pauseGame(); });
   document.getElementById('btn-undo')?.addEventListener('click', () => { undo(); });
-  document.getElementById('btn-hint')?.addEventListener('click', () => { doHint(); });
+  document.getElementById('btn-hint')?.addEventListener('click', () => { handleHint(); });
   document.getElementById('btn-restart')?.addEventListener('click', () => { AudioEngine.button(); restartLevel(); });
 
   // ── Pause menu ─────────────────────────────────────────
@@ -186,15 +216,31 @@ export function initUI(): void {
 
   // ── Win panel ──────────────────────────────────────────
   document.getElementById('win-replay')?.addEventListener('click', () => {
-    AudioEngine.button(); closeOverlay('win'); loadLevel(G.level);
+    AudioEngine.button(); closeOverlay('win');
+    if (G.daily) loadDailyChallenge(); else loadLevel(G.level);
   });
   document.getElementById('win-next')?.addEventListener('click', () => {
     AudioEngine.button(); closeOverlay('win');
-    loadLevel(Math.min(LEVEL_COUNT - 1, G.level + 1));
+    if (G.daily) { showScreen('menu'); updateMenuStars(); }
+    else loadLevel(Math.min(LEVEL_COUNT - 1, G.level + 1));
+  });
+  document.getElementById('win-double')?.addEventListener('click', () => {
+    AudioEngine.button();
+    showRewardPrompt({
+      title: 'Double your shards',
+      msg: 'Watch a short ad to double the shards you just earned?',
+      onReward: () => { doubleWinShards(); },
+    });
   });
   document.getElementById('win-levels')?.addEventListener('click', () => {
     AudioEngine.button(); closeOverlay('win');
+    Store.data.winStreak = 0; Store.save();
     showScreen('menu'); updateMenuStars(); buildLevelGrid(); openOverlay('levels');
+  });
+
+  // ── Daily reward popup ─────────────────────────────────
+  document.getElementById('dr-claim')?.addEventListener('click', () => {
+    AudioEngine.button(); claimDailyAndClose();
   });
 
   // ── Settings toggles ───────────────────────────────────

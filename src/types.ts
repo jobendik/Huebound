@@ -91,6 +91,28 @@ export interface Settings {
   haptics: boolean;
 }
 
+export interface DailyState {
+  lastSeenDay: string;   // YYYY-MM-DD of last app open that we processed
+  loginStreak: number;   // consecutive calendar days opened
+  bestLoginStreak: number;
+  lastRewardDay: string; // YYYY-MM-DD the daily login reward was claimed
+}
+
+export interface ChallengeState {
+  day: string;            // YYYY-MM-DD the `done`/`best` fields apply to
+  done: boolean;          // solved today's challenge
+  best?: BestRecord;      // best result for today's challenge
+  streak: number;         // consecutive days the daily challenge was solved
+  bestStreak: number;
+  lastSolvedDay: string;  // YYYY-MM-DD of the most recent solve (for streaks)
+}
+
+export interface Cosmetics {
+  skin: string;          // active vial/crystal skin id
+  theme: string;         // active background theme id
+  owned: string[];       // owned cosmetic ids (skins + themes)
+}
+
 export interface SaveData {
   version: number;
   started: boolean;
@@ -98,6 +120,12 @@ export interface SaveData {
   current: number;
   best: Record<string, BestRecord>;
   settings: Settings;
+  shards: number;        // spendable soft currency (crystal shards)
+  winStreak: number;     // consecutive level wins (resets on quit-to-menu/loss)
+  tutorialDone: boolean;
+  daily: DailyState;
+  challenge: ChallengeState;
+  cosmetics: Cosmetics;
 }
 
 export interface HintMove {
@@ -138,4 +166,6 @@ export interface GameState {
   settleT: number;
   boardW: number;
   boardH: number;
+  daily: boolean;     // current run is the Daily Challenge
+  hintsLeft: number;  // free hints remaining this level
 }

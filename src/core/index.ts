@@ -266,6 +266,31 @@ export function generateLevel(idx: number): {
   return { tubes, colors, empty, capacity, par: parFor(tubes) };
 }
 
+// Generate a guaranteed-solvable board at an explicit difficulty from an
+// arbitrary integer seed. Used by the Daily Challenge (seeded by the date) so
+// every player gets the same puzzle each day.
+export function generateBoard(
+  colors: number,
+  empty: number,
+  capacity: number,
+  seedBase: number,
+): { tubes: number[][]; colors: number; empty: number; capacity: number; par: number } {
+  for (let attempt = 0; attempt < 60; attempt++) {
+    const rng = mulberry32(hashSeed(seedBase * 131 + attempt + 1));
+    const tubes = dealRandom(colors, empty, capacity, rng);
+    if (isTrivial(tubes, capacity)) continue;
+    if (isSolvable(tubes, capacity, 60000)) {
+      return { tubes, colors, empty, capacity, par: parFor(tubes) };
+    }
+  }
+  const steps = 40 + colors * 18;
+  let tubes = reverseScramble(colors, empty, capacity, mulberry32(hashSeed(seedBase * 977 + 7)), steps);
+  if (isTrivial(tubes, capacity)) {
+    tubes = reverseScramble(colors, empty, capacity, mulberry32(hashSeed(seedBase * 977 + 99)), steps + colors * 8);
+  }
+  return { tubes, colors, empty, capacity, par: parFor(tubes) };
+}
+
 export function findHint(tubes: number[][], cap: number): { s: number; d: number } | null {
   let best: { s: number; d: number } | null = null;
   let bestScore = -1e9;

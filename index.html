@@ -8,6 +8,8 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="description" content="Sort crystal shards by color. A unique gem-sorting puzzle with 150 handcrafted levels.">
   <title>Huebound — Crystal Sort Puzzle</title>
+  <!-- CrazyGames SDK (optional). Loads async; the game runs fine without it. -->
+  <script src="https://sdk.crazygames.com/crazygames-sdk-v3.js"></script>
 </head>
 <body>
 <div id="app">
@@ -69,15 +71,23 @@
     <div class="menu-actions">
       <button class="btn primary wide" id="btn-continue">Continue</button>
       <button class="btn wide" id="btn-play">Start from Level 1</button>
-      <button class="btn wide" id="btn-levels">Levels</button>
+      <button class="btn wide daily-btn" id="btn-daily">
+        <span class="dc-main">&#9670; Daily Challenge</span>
+        <span class="daily-badge" id="daily-badge" hidden></span>
+      </button>
+      <div style="display:flex;gap:12px">
+        <button class="btn ghost" style="flex:1" id="btn-levels">Levels</button>
+        <button class="btn ghost" style="flex:1" id="btn-shop">Shop</button>
+      </div>
       <div style="display:flex;gap:12px">
         <button class="btn ghost" style="flex:1" id="btn-howto">How to Play</button>
         <button class="btn ghost" style="flex:1" id="btn-settings">Settings</button>
       </div>
     </div>
     <div class="menu-foot">
-      <span class="star-count">&#9830; <span id="menu-stars">0</span></span>
-      gems collected &middot; <span id="menu-progress">Level 1 unlocked</span>
+      <span class="wallet shard-count"><span class="ic">&#9670;</span> <span id="menu-shards">0</span></span>
+      <span class="wallet star-count"><span class="ic">&#9733;</span> <span id="menu-stars">0</span></span>
+      <span id="menu-progress">Level 1 unlocked</span>
     </div>
   </section>
 
@@ -85,20 +95,25 @@
   <section id="play" class="screen" aria-label="Gameplay">
     <div id="hud">
       <button class="btn icon ghost" id="btn-pause" aria-label="Menu">&#9776;</button>
-      <div class="level-tag">Level <span id="hud-level">1</span></div>
+      <div class="level-tag" id="hud-level-tag">Level <span id="hud-level">1</span></div>
       <div class="spacer"></div>
       <div class="chip"><div class="k">Moves</div><div class="v" id="hud-moves">0</div></div>
       <div class="chip optional-chip"><div class="k">Target</div><div class="v" id="hud-target">0</div></div>
       <div class="chip optional-chip"><div class="k">Best</div><div class="v" id="hud-best">&#8212;</div></div>
       <div class="chip"><div class="k">Time</div><div class="v" id="hud-time">0:00</div></div>
+      <div class="chip shard-chip"><div class="k">Shards</div><div class="v" id="hud-shards">0</div></div>
     </div>
     <div id="board-wrap">
       <canvas id="board"></canvas>
       <div id="toast" role="status"></div>
+      <div id="coach" aria-live="polite">
+        <div class="coach-finger" id="coach-finger">&#9757;</div>
+        <div class="coach-bubble" id="coach-bubble"></div>
+      </div>
     </div>
     <div id="actionbar">
       <button class="btn ghost" id="btn-undo"><span class="ic">&#8634;</span>Undo</button>
-      <button class="btn ghost" id="btn-hint"><span class="ic">&#128161;</span>Hint</button>
+      <button class="btn ghost" id="btn-hint"><span class="ic">&#128161;</span><span id="hint-label">Hint</span></button>
       <button class="btn ghost" id="btn-restart"><span class="ic">&#10227;</span>Restart</button>
     </div>
   </section>
@@ -208,22 +223,73 @@
   <!-- ── Win ─────────────────────────────────────────────── -->
   <div id="win" class="overlay">
     <div class="sheet card">
+      <div class="win-streak" id="win-streak" hidden></div>
       <h2 id="win-title">Sorted!</h2>
       <div class="win-stars" id="win-stars" aria-hidden="true">
-        <span class="s">&#9830;</span>
-        <span class="s">&#9830;</span>
-        <span class="s">&#9830;</span>
+        <span class="s">&#9733;</span>
+        <span class="s">&#9733;</span>
+        <span class="s">&#9733;</span>
       </div>
-      <div id="win-best" style="min-height:24px"></div>
+      <div id="win-best" style="min-height:22px"></div>
       <div class="win-meta">
         <div>Moves <b id="win-moves">0</b></div>
         <div>Time <b id="win-time">0:00</b></div>
+      </div>
+      <div class="reward-line">
+        <span class="ic">&#9670;</span> <b id="win-shards">+0</b> shards earned
+      </div>
+      <button class="btn reward-btn wide" id="win-double" hidden>
+        <span class="ic">&#9654;</span> Watch ad &mdash; double shards
+      </button>
+      <div class="next-preview" id="win-next-wrap" hidden>
+        <div class="np-label">Up next &middot; Level <span id="win-next-num">2</span></div>
+        <div class="np-vials" id="win-next-vials" aria-hidden="true"></div>
       </div>
       <div class="win-actions">
         <button class="btn ghost" id="win-replay">Replay</button>
         <button class="btn primary" id="win-next">Next &rarr;</button>
       </div>
       <button class="btn ghost wide" id="win-levels">Level Select</button>
+    </div>
+  </div>
+
+  <!-- ── Daily reward ────────────────────────────────────── -->
+  <div id="daily-reward" class="overlay">
+    <div class="sheet card" style="width:min(380px,92vw);text-align:center;align-items:center">
+      <div class="dr-icon">&#9670;</div>
+      <h2>Welcome back!</h2>
+      <div class="dr-streak" id="dr-streak">Day 1 streak</div>
+      <div class="dr-amount"><span class="ic">&#9670;</span> <span id="dr-amount">25</span></div>
+      <div class="hint" id="dr-sub">Daily login bonus</div>
+      <button class="btn primary wide" id="dr-claim">Collect</button>
+    </div>
+  </div>
+
+  <!-- ── Rewarded-ad opt-in prompt ───────────────────────── -->
+  <div id="reward-prompt" class="overlay">
+    <div class="sheet card" style="width:min(360px,92vw);text-align:center;align-items:center">
+      <div class="dr-icon" id="rp-icon">&#9654;</div>
+      <h2 id="rp-title">Watch a short ad?</h2>
+      <div class="hint" id="rp-msg">Get a reward for watching.</div>
+      <button class="btn primary wide" id="rp-watch"><span class="ic">&#9654;</span> Watch ad</button>
+      <button class="btn ghost wide" id="rp-cancel">No thanks</button>
+    </div>
+  </div>
+
+  <!-- ── Shop ────────────────────────────────────────────── -->
+  <div id="shop" class="overlay">
+    <div class="sheet card">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <h2>Crystal Shop</h2>
+        <span class="wallet shard-count big"><span class="ic">&#9670;</span> <span id="shop-shards">0</span></span>
+      </div>
+      <div class="scroll">
+        <div class="shop-cat">Vial Skins</div>
+        <div class="shop-grid" id="shop-skins"></div>
+        <div class="shop-cat">Backgrounds</div>
+        <div class="shop-grid" id="shop-themes"></div>
+      </div>
+      <button class="btn primary wide" data-close="shop">Done</button>
     </div>
   </div>
 </div>
