@@ -12,7 +12,7 @@ export const Store = {
       maxUnlocked: 0,
       current: 0,
       best: {},
-      settings: { sound: true, motion: true, symbols: false },
+      settings: { sound: true, motion: true, symbols: false, haptics: true },
     };
   },
 

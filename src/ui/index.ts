@@ -1,5 +1,6 @@
 import { G } from '../game/state';
 import { AudioEngine } from '../audio/engine';
+import { Haptics } from '../platform/haptics';
 import { Store } from '../store';
 import { Platform } from '../platform';
 import { LEVEL_COUNT } from '../render/colors';
@@ -71,15 +72,15 @@ function handleTap(px: number, py: number): void {
     return;
   }
   if (G.selected < 0) {
-    if (G.tubes[i].length > 0) { G.selected = i; G.hintMove = null; AudioEngine.select(); markDirty(); }
+    if (G.tubes[i].length > 0) { G.selected = i; G.hintMove = null; AudioEngine.select(); Haptics.select(); markDirty(); }
     return;
   }
   if (i === G.selected) { G.selected = -1; AudioEngine.deselect(); markDirty(); return; }
   const amt = pourAmount(G.tubes[G.selected], G.tubes[i], G.cap);
   if (amt > 0) { tryPour(G.selected, i); return; }
   const sameTop = topColor(G.tubes[G.selected]) === topColor(G.tubes[i]) && G.tubes[i].length > 0;
-  if (sameTop) { AudioEngine.invalid(); shakeTube(i); }
-  else if (G.tubes[i].length > 0) { G.selected = i; G.hintMove = null; AudioEngine.select(); markDirty(); }
+  if (sameTop) { AudioEngine.invalid(); Haptics.invalid(); shakeTube(i); }
+  else if (G.tubes[i].length > 0) { G.selected = i; G.hintMove = null; AudioEngine.select(); Haptics.select(); markDirty(); }
   else { G.selected = -1; AudioEngine.deselect(); markDirty(); }
 }
 
@@ -207,6 +208,7 @@ export function initUI(): void {
     });
   }
   bindToggle('tg-sound', () => Store.data.settings.sound, (v) => { Store.data.settings.sound = v; });
+  bindToggle('tg-haptics', () => Store.data.settings.haptics !== false, (v) => { Store.data.settings.haptics = v; if (v) Haptics.select(); });
   bindToggle('tg-motion', () => !Store.data.settings.motion, (v) => { Store.data.settings.motion = !v; });
   bindToggle('tg-symbols', () => Store.data.settings.symbols, (v) => { Store.data.settings.symbols = v; });
 

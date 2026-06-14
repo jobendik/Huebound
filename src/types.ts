@@ -46,6 +46,7 @@ export interface RingFX {
   life: number;
   r0: number;
   r1: number;
+  color?: string;
 }
 
 export interface SparkFX {
@@ -87,6 +88,7 @@ export interface Settings {
   sound: boolean;
   motion: boolean;
   symbols: boolean;
+  haptics: boolean;
 }
 
 export interface SaveData {
@@ -132,6 +134,8 @@ export interface GameState {
   symbols: boolean;
   shakeI: number;
   shakeT: number;
+  settleI: number;
+  settleT: number;
   boardW: number;
   boardH: number;
 }

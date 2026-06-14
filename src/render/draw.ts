@@ -138,13 +138,40 @@ interface DrawVialOpts {
   hintTo?: boolean;
   lift?: number;
   dx?: number;
+  rot?: number;
+  squash?: number;
   pulse?: number;
+}
+
+// Soft contact shadow grounding the vial on the cave floor. Drawn in screen
+// space (never rotated) and fades out as the vial lifts off to pour.
+function drawGroundShadow(bx: number, y: number, w: number, h: number, lift: number): void {
+  const spread = 1 - Math.min(1, lift / (w * 1.1));
+  if (spread <= 0.03) return;
+  const cx = bx + w / 2;
+  const cy = y + h + Math.min(7, w * 0.10);
+  const rx = w * 0.5;
+  const ry = w * 0.14;
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.scale(1, ry / rx);
+  const g = ctx.createRadialGradient(0, 0, 0, 0, 0, rx);
+  g.addColorStop(0, `rgba(0,0,0,${0.42 * spread})`);
+  g.addColorStop(0.65, `rgba(0,0,0,${0.18 * spread})`);
+  g.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = g;
+  ctx.beginPath();
+  ctx.arc(0, 0, rx, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
 }
 
 export function drawVial(rect: VialRect, bands: Band[], opts: DrawVialOpts = {}, cap = 4): void {
   const { x: bx, y, w, h, unitH, innerPad } = rect;
   const x = bx + (opts.dx ?? 0);
   const lift = opts.lift ?? 0;
+  const rot = opts.rot ?? 0;
+  const sq = opts.squash ?? 0;
   const rimH = w * 0.16;
   const bodyY = y - lift + rimH * 0.5;
   const bodyH = h - rimH * 0.5;
@@ -152,7 +179,27 @@ export function drawVial(rect: VialRect, bands: Band[], opts: DrawVialOpts = {},
   const innerX = x + innerPad, innerW = w - innerPad * 2;
   const innerBottom = (y - lift) + h - innerPad;
 
+  drawGroundShadow(bx, y, w, h, lift);
+
   ctx.save();
+
+  // Pour tilt — rotate the rigid vial about its own centre so it leans toward
+  // the target without swinging out of bounds.
+  if (rot) {
+    const pivX = x + w / 2;
+    const pivY = bodyY + bodyH / 2;
+    ctx.translate(pivX, pivY);
+    ctx.rotate(rot);
+    ctx.translate(-pivX, -pivY);
+  }
+  // Landing bounce — squash/stretch about the base when crystals settle.
+  if (sq) {
+    const pcx = x + w / 2;
+    const pcy = (y - lift) + h;
+    ctx.translate(pcx, pcy);
+    ctx.scale(1 - sq * 0.5, 1 + sq);
+    ctx.translate(-pcx, -pcy);
+  }
 
   // Glass body — purple-tinted so the tube is clearly visible.
   roundRectPath(ctx, x, bodyY, w, bodyH, rTop, rBot);
@@ -279,40 +326,67 @@ export function drawVial(rect: VialRect, bands: Band[], opts: DrawVialOpts = {},
   ctx.restore();
 }
 
-// Crystal shard pour — diamond fragments travel along a bezier arc.
-export function drawCrystalStream(a: AnimState, ap: AnimProgress): void {
+// Source-vial pour transform shared between the body draw and the shard stream.
+interface PourTf { dir: 1 | -1; lift: number; dx: number; rot: number; spoutX: number; spoutY: number; }
+
+function pourTransform(a: AnimState, ap: AnimProgress): PourTf {
   const { rects, vw } = G.layout!;
   const sr = rects[a.s], dr = rects[a.d];
-  const liftAmt = vw * 0.5;
-  const dir = dr.x >= sr.x ? 1 : -1;
-  const srcDx = dir * vw * 0.18 * ap.liftEnv;
+  const dir: 1 | -1 = dr.x >= sr.x ? 1 : -1;
+  const env = ap.liftEnv;
+  // Lift, but never push the vial mouth above the top of the board.
+  const lift = Math.min(vw * 0.30 * env, Math.max(0, sr.y - 6) * env);
+  const dx = dir * vw * 0.14 * env;
+  const rot = dir * 0.40 * env; // up to ~23° of lean at full pour
+  // Spout = the pouring lip, found by rotating the mouth-edge about the centre.
+  const rimH = sr.w * 0.16;
+  const x = sr.x + dx;
+  const bodyY = sr.y - lift + rimH * 0.5;
+  const bodyH = sr.h - rimH * 0.5;
+  const cx = x + sr.w / 2, cy = bodyY + bodyH / 2;
+  const lx = x + sr.w / 2 + dir * sr.w * 0.46 - cx;
+  const ly = bodyY + rimH * 0.4 - cy;
+  const spoutX = cx + lx * Math.cos(rot) - ly * Math.sin(rot);
+  const spoutY = cy + lx * Math.sin(rot) + ly * Math.cos(rot);
+  return { dir, lift, dx, rot, spoutX, spoutY };
+}
 
-  const spoutX = sr.x + srcDx + sr.w / 2 + dir * sr.w * 0.32;
-  const spoutY = sr.y - liftAmt * ap.liftEnv + sr.w * 0.12;
+// Crystal shard pour — diamond fragments fall from the tilted spout under
+// gravity and stream into the destination mouth.
+export function drawCrystalStream(a: AnimState, ap: AnimProgress, tf: PourTf): void {
+  const { rects, vw } = G.layout!;
+  const dr = rects[a.d];
+
+  const spoutX = tf.spoutX;
+  const spoutY = tf.spoutY;
   const dstUnits = a.pre[a.d].length + a.count * ap.tfrac;
   const innerBottom = dr.y + dr.h - dr.innerPad;
-  const dstTopY = Math.max(dr.y + dr.w * 0.2, innerBottom - dstUnits * dr.unitH);
+  const dstTopY = Math.max(dr.y + dr.w * 0.22, innerBottom - dstUnits * dr.unitH);
   const mouthX = dr.x + dr.w / 2;
-  const ctrlX = (spoutX + mouthX) / 2;
-  const ctrlY = Math.min(spoutY, dstTopY) - vw * 0.18;
+  // Arc that bows toward the destination — bezier control biased to the source.
+  const ctrlX = spoutX + (mouthX - spoutX) * 0.35;
+  const ctrlY = Math.min(spoutY, dstTopY) - vw * 0.12;
 
   const col = PALETTE[a.color] ?? '#fff';
-  const numShards = 8;
+  const numShards = 9;
 
   for (let k = 0; k < numShards; k++) {
-    const t = clamp01(ap.tfrac - k * 0.07);
-    if (t <= 0) continue;
+    const t = clamp01(ap.tfrac * 1.15 - k * 0.06);
+    if (t <= 0 || t >= 1) continue;
 
     const bx = (1 - t) * (1 - t) * spoutX + 2 * (1 - t) * t * ctrlX + t * t * mouthX;
     const by = (1 - t) * (1 - t) * spoutY + 2 * (1 - t) * t * ctrlY + t * t * dstTopY;
-    const shardSize = vw * (0.08 + (numShards - k) * 0.007);
-    const rot = t * Math.PI * 3 + k * 1.15;
+    const shardSize = vw * (0.085 + (numShards - k) * 0.006);
+    const rot = t * Math.PI * 3.5 + k * 1.15;
 
     ctx.save();
     ctx.translate(bx, by);
     ctx.rotate(rot);
-    ctx.globalAlpha = 0.92 - k * 0.08;
+    ctx.globalAlpha = (0.95 - k * 0.07) * clamp01(t * 8) * clamp01((1 - t) * 8);
 
+    // Glow halo
+    ctx.shadowColor = rgba(col, 0.8);
+    ctx.shadowBlur = vw * 0.10;
     ctx.fillStyle = col;
     ctx.beginPath();
     ctx.moveTo(0, -shardSize);
@@ -321,9 +395,10 @@ export function drawCrystalStream(a: AnimState, ap: AnimProgress): void {
     ctx.lineTo(-shardSize * 0.55, 0);
     ctx.closePath();
     ctx.fill();
+    ctx.shadowBlur = 0;
 
     // Facet highlight
-    ctx.fillStyle = 'rgba(255,255,255,0.48)';
+    ctx.fillStyle = 'rgba(255,255,255,0.55)';
     ctx.beginPath();
     ctx.moveTo(0, -shardSize);
     ctx.lineTo(shardSize * 0.55, 0);
@@ -354,7 +429,8 @@ export function draw(now?: number): void {
     ap = { p, tfrac: easeInOut(transfer), liftEnv };
   }
 
-  const bob = G.selected >= 0 ? Math.sin(now * 0.006) * 2 + 7 : 0;
+  // Selection float — gentle ease-up plus a slow hover bob.
+  const bob = G.selected >= 0 ? Math.sin(now * 0.005) * 2.4 + 9 : 0;
   let hintPulse = 0;
   if (G.hintMove) {
     hintPulse = 8 + Math.sin(now * 0.008) * 6;
@@ -365,6 +441,21 @@ export function draw(now?: number): void {
     ? Math.sin((now - G.shakeT) * 0.06) * G.layout.vw * 0.10 * (1 - (now - G.shakeT) / 320)
     : 0;
 
+  // Landing bounce — a quick damped squash on the destination after a pour.
+  const SETTLE_MS = 360;
+  let settleSq = 0;
+  if (G.settleI >= 0) {
+    const st = now - G.settleT;
+    if (st < SETTLE_MS) {
+      const k = st / SETTLE_MS;
+      settleSq = Math.sin(k * Math.PI * 2.2) * 0.10 * (1 - k);
+    } else {
+      G.settleI = -1;
+    }
+  }
+
+  const tf = a && ap ? pourTransform(a, ap) : null;
+
   for (let i = 0; i < G.tubes.length; i++) {
     const r = G.layout.rects[i];
     const tube = G.tubes[i];
@@ -372,16 +463,15 @@ export function draw(now?: number): void {
     const opts: DrawVialOpts = {};
     const completed = tube.length === cap && isMonochrome(tube);
 
-    if (a && ap && (i === a.s || i === a.d)) {
-      const liftAmt = G.layout.vw * 0.5;
+    if (a && ap && tf && (i === a.s || i === a.d)) {
       if (i === a.s) {
         const base = a.pre[a.s].slice(0, a.pre[a.s].length - a.count);
         bands = bandsOf(base);
         const moving = a.count * (1 - ap.tfrac);
         if (moving > 0.001) bands.push({ color: a.color, units: moving });
-        const dir = G.layout.rects[a.d].x >= r.x ? 1 : -1;
-        opts.lift = liftAmt * ap.liftEnv;
-        opts.dx = dir * G.layout.vw * 0.18 * ap.liftEnv;
+        opts.lift = tf.lift;
+        opts.dx = tf.dx;
+        opts.rot = tf.rot;
       } else {
         bands = bandsOf(a.pre[a.d]);
         const add = a.count * ap.tfrac;
@@ -391,6 +481,7 @@ export function draw(now?: number): void {
       bands = bandsOf(tube);
       if (i === G.selected) opts.lift = bob;
       if (i === G.shakeI && sh) opts.dx = sh;
+      if (i === G.settleI && settleSq) opts.squash = settleSq;
     }
 
     opts.completed = completed && !(a && i === a.d && ap && ap.tfrac < 1);
@@ -401,5 +492,5 @@ export function draw(now?: number): void {
     drawVial(r, bands, opts, cap);
   }
 
-  if (a && ap && ap.p > 0.26 && ap.p < 0.86) drawCrystalStream(a, ap);
+  if (a && ap && tf && ap.tfrac > 0.001 && ap.tfrac < 0.999) drawCrystalStream(a, ap, tf);
 }

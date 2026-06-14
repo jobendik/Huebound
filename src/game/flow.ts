@@ -3,12 +3,13 @@ import { startTiming, stopTiming } from './timer';
 import { fmtTime } from './timer';
 import { cloneTubes, topColor, pourAmount, applyPour, isSolved, findHint, generateLevel } from '../core';
 import { AudioEngine } from '../audio/engine';
+import { Haptics } from '../platform/haptics';
 import { Store } from '../store';
 import { Platform } from '../platform';
 import { LEVEL_COUNT } from '../render/colors';
 import { startLoop, markDirty } from '../render/loop';
 import { computeLayout } from '../render/layout';
-import { spawnComplete, spawnCrystalRain } from '../render/effects';
+import { spawnComplete, spawnCrystalRain, spawnLand } from '../render/effects';
 import { updateHUD } from '../ui/hud';
 import { showScreen, openOverlay, updateMenuStars } from '../ui/overlays';
 import { toast } from '../ui/toast';
@@ -70,8 +71,9 @@ export function tryPour(s: number, d: number): boolean {
   G.selected = -1;
   G.hintMove = null;
   G.locked = true;
-  G.anim = { type: 'pour', s, d, color, count: amt, pre, t0: performance.now(), dur: G.motion ? 440 : 1 };
+  G.anim = { type: 'pour', s, d, color, count: amt, pre, t0: performance.now(), dur: G.motion ? 500 : 1 };
   AudioEngine.pour();
+  Haptics.pour();
   updateHUD();
   startLoop();
   return true;
@@ -82,10 +84,16 @@ export function finishPour(): void {
   G.anim = null;
   G.locked = false;
   if (!a) return;
+  // Landing bounce on the destination once the shards have settled.
+  if (G.motion) { G.settleI = a.d; G.settleT = performance.now(); }
   const dt = G.tubes[a.d];
-  if (dt.length === G.cap && G.tubes[a.d].every((c) => c === G.tubes[a.d][0])) {
+  const completed = dt.length === G.cap && G.tubes[a.d].every((c) => c === G.tubes[a.d][0]);
+  if (completed) {
     spawnComplete(a.d);
     AudioEngine.complete();
+    Haptics.complete();
+  } else {
+    spawnLand(a.d, a.color);
   }
   if (isSolved(G.tubes, G.cap)) onWin();
   else markDirty();
@@ -167,6 +175,7 @@ function onWin(): void {
 
   spawnCrystalRain();
   AudioEngine.win();
+  Haptics.win();
   Platform.onGameplayStop();
   Platform.onLevelComplete(G.level + 1, { moves: G.moves, stars, timeMs: Math.round(G.timeMs) });
 

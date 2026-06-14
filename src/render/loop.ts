@@ -11,8 +11,13 @@ function shakeActive(): boolean {
   return G.shakeI >= 0 && performance.now() - G.shakeT < 320;
 }
 
+function settleActive(): boolean {
+  return G.settleI >= 0 && performance.now() - G.settleT < 360;
+}
+
 function needsAnim(): boolean {
-  return !!G.anim || G.fx.length > 0 || G.selected >= 0 || !!G.hintMove || shakeActive();
+  return !!G.anim || G.fx.length > 0 || G.selected >= 0 || !!G.hintMove
+    || shakeActive() || settleActive();
 }
 
 export function startLoop(): void {

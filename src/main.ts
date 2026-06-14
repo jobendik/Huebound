@@ -8,6 +8,7 @@ import { initUI } from './ui';
 import './styles/main.css';
 
 function init(): void {
+  if (import.meta.env.DEV) (window as unknown as { __G: typeof G }).__G = G;
   Store.load();
   G.shakeI = -1;
   G.shakeT = 0;
